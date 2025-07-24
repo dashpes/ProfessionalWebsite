@@ -1,4 +1,4 @@
-# Daniel Ashpes - Professional Portfolio Website
+# Daniel Ashpes - Portfolio Website
 
 [![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen)](https://danielashpes.com)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
