@@ -7,6 +7,7 @@ export interface GitHubRepo {
   homepage: string | null
   topics: string[]
   language: string | null
+  languages_url: string
   stargazers_count: number
   forks_count: number
   created_at: string
@@ -14,6 +15,9 @@ export interface GitHubRepo {
   pushed_at: string
   archived: boolean
   private: boolean
+  // Enhanced language data
+  languages?: Record<string, number>
+  size: number
 }
 
 export interface Project {
