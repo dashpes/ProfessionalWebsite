@@ -1,0 +1,37 @@
+# Next.js
+.next/
+out/
+.vercel/
+
+# node_modules
+node_modules/
+
+# npm
+npm-debug.log
+.npm/
+
+# yarn
+yarn-error.log
+.yarn/
+
+# pnpm
+pnpm-debug.log*
+.pnpm-store/
+
+# dotenv
+.env
+.env*.local
+
+# logs
+logs/
+*.log
+
+# misc
+.DS_Store
+Thumbs.db
+
+# Sensitive documentation - not for public repo
+ADMIN_SETUP.md
+DEPLOYMENT.md
+SECURITY.md
+CLAUDE.md

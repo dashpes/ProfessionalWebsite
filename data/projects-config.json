@@ -1,0 +1,71 @@
+{
+  "githubUsername": "dashpes",
+  "excludeRepos": [
+    "danielashpes",
+    ".github",
+    "private-notes"
+  ],
+  "includeRepos": [],
+  "manualProjects": [],
+  "repoOverrides": {
+    "Professional_Website": {
+      "title": "Personal Portfolio Website",
+      "description": "Full-stack portfolio built with Next.js 15, TypeScript, and Tailwind CSS. Features comprehensive SEO optimization, admin panel, dynamic GitHub integration, contact system, and responsive design. Showcases modern web development practices.",
+      "featured": true,
+      "order": 1,
+      "image": "/projects/portfolio.png",
+      "technologies": [
+        "Next.js 15",
+        "TypeScript", 
+        "Tailwind CSS",
+        "React 19",
+        "Vercel Analytics",
+        "SEO Optimization",
+        "GitHub API",
+        "Email Integration"
+      ]
+    },
+    "ComedyMovieDataAnalysis": {
+      "title": "Comedy Movie Data Analysis",
+      "description": "Data analysis of production trends in comedy movies using Python and data visualization.",
+      "featured": true,
+      "order": 2,
+      "technologies": [
+        "Python",
+        "Data Analysis",
+        "Pandas",
+        "Matplotlib"
+      ]
+    },
+    "PhotoManager": {
+      "title": "Photo Manager",
+      "description": "A desktop photo management application similar to Picasa, built with Python.",
+      "featured": true,
+      "order": 3,
+      "technologies": [
+        "Python",
+        "GUI",
+        "Image Processing"
+      ]
+    },
+    "NewsAggregator": {
+      "title": "News Aggregator",
+      "description": "Intelligent news aggregation tool that collects and organizes articles by topic.",
+      "technologies": [
+        "Python",
+        "Web Scraping",
+        "JSON",
+        "API"
+      ]
+    },
+    "Unit_Converter": {
+      "title": "Unit Converter",
+      "description": "A versatile unit conversion utility supporting multiple measurement types.",
+      "technologies": [
+        "Python",
+        "CLI",
+        "Mathematics"
+      ]
+    }
+  }
+}

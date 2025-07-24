@@ -1,0 +1,14 @@
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1f2937;stop-opacity:1" />
+    </radialGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <circle cx="96" cy="96" r="90" fill="url(#bg)" filter="url(#shadow)"/>
+  <circle cx="96" cy="96" r="90" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.2"/>
+  <text x="96" y="115" font-family="Arial,sans-serif" font-size="76" font-weight="700" text-anchor="middle" fill="#ffffff" style="text-shadow: 0 2px 6px rgba(0,0,0,0.5)">DA</text>
+</svg>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daniel Ashpes - Favicon Test</title>
+    
+    <!-- Favicon Links -->
+    <link rel="icon" type="image/svg+xml" href="/favicon-32x32.svg">
+    <link rel="icon" type="image/svg+xml" sizes="16x16" href="/favicon-16x16.svg">
+    <link rel="icon" type="image/svg+xml" sizes="32x32" href="/favicon-32x32.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.svg">
+    <link rel="icon" type="image/svg+xml" sizes="192x192" href="/android-chrome-192x192.svg">
+    <link rel="icon" type="image/svg+xml" sizes="512x512" href="/android-chrome-512x512.svg">
+    
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: #000;
+            color: #fff;
+            line-height: 1.6;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, #8b5cf6, #1f2937);
+            border-radius: 12px;
+        }
+        
+        .test-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 24px; 
+            margin: 30px 0; 
+        }
+        
+        .test-item { 
+            border: 1px solid #333; 
+            padding: 20px; 
+            border-radius: 12px;
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+        }
+        
+        .test-item h3 {
+            color: #8b5cf6;
+            margin-top: 0;
+            font-size: 1.2em;
+        }
+        
+        .favicon-preview { 
+            display: inline-block; 
+            margin: 8px; 
+            border: 1px solid #444;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .favicon-preview img {
+            display: block;
+        }
+        
+        .size-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            font-size: 10px;
+            text-align: center;
+            padding: 2px;
+        }
+        
+        .dark-bg { background: #000; }
+        .light-bg { background: #fff; }
+        .gray-bg { background: #f5f5f5; }
+        
+        .browser-tab-sim {
+            background: #f0f0f0; 
+            padding: 8px 12px; 
+            border-radius: 8px 8px 0 0; 
+            color: #333; 
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #ddd;
+            max-width: 200px;
+            font-size: 14px;
+        }
+        
+        .browser-tab-sim img {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .checklist {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #8b5cf6;
+        }
+        
+        .checklist li {
+            margin: 8px 0;
+            padding: 4px 0;
+        }
+        
+        .status-good { color: #10b981; }
+        .status-warning { color: #f59e0b; }
+        
+        .color-swatch {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            vertical-align: middle;
+            margin: 0 8px;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 Daniel Ashpes Favicon Test Suite</h1>
+        <p>Testing favicon visibility and brand consistency across all platforms</p>
+    </div>
+    
+    <div class="test-grid">
+        <div class="test-item">
+            <h3>🖥️ Browser Tab Sizes</h3>
+            <p>Critical for browser recognition:</p>
+            
+            <div class="light-bg favicon-preview">
+                <img src="/favicon-16x16.svg" width="16" height="16" alt="16x16">
+                <div class="size-label">16px</div>
+            </div>
+            
+            <div class="light-bg favicon-preview">
+                <img src="/favicon-32x32.svg" width="32" height="32" alt="32x32">
+                <div class="size-label">32px</div>
+            </div>
+            
+            <div class="dark-bg favicon-preview">
+                <img src="/favicon-16x16.svg" width="16" height="16" alt="16x16 dark">
+                <div class="size-label">16px dark</div>
+            </div>
+            
+            <div class="dark-bg favicon-preview">
+                <img src="/favicon-32x32.svg" width="32" height="32" alt="32x32 dark">
+                <div class="size-label">32px dark</div>
+            </div>
+            
+            <div style="margin-top: 16px;">
+                <strong>Browser Tab Simulation:</strong><br>
+                <div class="browser-tab-sim">
+                    <img src="/favicon-16x16.svg" alt="tab icon">
+                    <span>Daniel Ashpes - Portfolio</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-item">
+            <h3>📱 Mobile & Touch Icons</h3>
+            <p>iOS and Android home screens:</p>
+            
+            <div class="light-bg favicon-preview">
+                <img src="/apple-touch-icon.svg" width="60" height="60" alt="iOS icon">
+                <div class="size-label">iOS 180px</div>
+            </div>
+            
+            <div class="light-bg favicon-preview">
+                <img src="/android-chrome-192x192.svg" width="60" height="60" alt="Android icon">
+                <div class="size-label">Android 192px</div>
+            </div>
+            
+            <div class="dark-bg favicon-preview">
+                <img src="/apple-touch-icon.svg" width="60" height="60" alt="iOS dark">
+                <div class="size-label">iOS dark</div>
+            </div>
+            
+            <div class="dark-bg favicon-preview">
+                <img src="/android-chrome-192x192.svg" width="60" height="60" alt="Android dark">
+                <div class="size-label">Android dark</div>
+            </div>
+        </div>
+        
+        <div class="test-item">
+            <h3>🎨 Brand Color Test</h3>
+            <p>Your brand colors:</p>
+            <div>
+                <span class="color-swatch" style="background: #8b5cf6;"></span>Purple Primary: #8b5cf6
+            </div>
+            <div>
+                <span class="color-swatch" style="background: #1f2937;"></span>Dark Gray: #1f2937
+            </div>
+            <div>
+                <span class="color-swatch" style="background: #ffffff;"></span>White Text: #ffffff
+            </div>
+            
+            <div style="margin-top: 16px;">
+                <div class="favicon-preview" style="background: #8b5cf6;">
+                    <img src="/favicon-32x32.svg" width="32" height="32" alt="on purple">
+                    <div class="size-label">On Purple</div>
+                </div>
+                
+                <div class="favicon-preview" style="background: #1f2937;">
+                    <img src="/favicon-32x32.svg" width="32" height="32" alt="on dark">
+                    <div class="size-label">On Dark</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-item">
+            <h3>⚡ High Resolution</h3>
+            <p>Retina and high-DPI displays:</p>
+            
+            <div class="light-bg favicon-preview">
+                <img src="/android-chrome-512x512.svg" width="80" height="80" alt="512x512">
+                <div class="size-label">512px (scaled)</div>
+            </div>
+            
+            <div class="dark-bg favicon-preview">
+                <img src="/android-chrome-512x512.svg" width="80" height="80" alt="512x512 dark">
+                <div class="size-label">512px dark</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="checklist">
+        <h2>📋 Favicon Quality Checklist</h2>
+        <ul>
+            <li class="status-good">✅ 16x16px - Text "DA" readable in browser tabs</li>
+            <li class="status-good">✅ 32x32px - Clear on standard displays</li>
+            <li class="status-good">✅ 180x180px - iOS home screen optimized</li>
+            <li class="status-good">✅ 192x192px - Android home screen ready</li>
+            <li class="status-good">✅ 512x512px - High-resolution support</li>
+            <li class="status-good">✅ Brand Colors - Purple gradient (#8b5cf6)</li>
+            <li class="status-good">✅ Visibility - Works on light and dark backgrounds</li>
+            <li class="status-good">✅ Typography - Clean, bold "DA" initials</li>
+            <li class="status-good">✅ Professional - Matches website design</li>
+        </ul>
+        
+        <h3>🚀 Implementation Status</h3>
+        <p><strong>Recommendation:</strong> Use the "DA" initials design - it's clean, readable at all sizes, and perfectly represents your brand.</p>
+        <p><strong>Original Logo:</strong> Your logo might work for larger sizes (180px+) but the "DA" design ensures perfect readability at critical small sizes (16px, 32px).</p>
+    </div>
+    
+    <div style="text-align: center; margin-top: 40px; padding: 20px; background: #1a1a1a; border-radius: 12px;">
+        <p>🎯 <strong>Ready to implement?</strong> These favicons are optimized for your brand and will look great across all platforms!</p>
+    </div>
+</body>
+</html>
