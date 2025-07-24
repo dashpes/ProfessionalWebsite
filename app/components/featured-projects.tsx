@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import Image from "next/image"
-import { projectService } from "@/lib/projects"
 import { Project } from "@/lib/types"
 import { useState, useEffect, useRef } from "react"
 
@@ -17,10 +16,19 @@ export default function FeaturedProjects() {
   const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    // Fetch projects on component mount
+    // Fetch projects from API endpoint
     const fetchProjects = async () => {
-      const featuredProjects = await projectService.getFeaturedProjects()
-      setProjects(featuredProjects)
+      try {
+        const response = await fetch('/api/projects/featured')
+        if (response.ok) {
+          const featuredProjects = await response.json()
+          setProjects(featuredProjects)
+        } else {
+          console.error('Failed to fetch featured projects')
+        }
+      } catch (error) {
+        console.error('Error fetching featured projects:', error)
+      }
     }
     fetchProjects()
   }, [])

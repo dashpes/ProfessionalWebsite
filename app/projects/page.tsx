@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import Image from "next/image"
-import { projectService } from "@/lib/projects"
 import { Project } from "@/lib/types"
 import { Suspense, useState, useEffect, useRef } from "react"
 import GitHubStatsCompact from "../components/github-stats-compact"
@@ -19,10 +18,19 @@ function ProjectsGrid() {
   const projectRefs = useRef<(HTMLDivElement | null)[]>([])
 
   useEffect(() => {
-    // Fetch projects on component mount
+    // Fetch projects from API endpoint
     const fetchProjects = async () => {
-      const allProjects = await projectService.getAllProjects()
-      setProjects(allProjects)
+      try {
+        const response = await fetch('/api/projects')
+        if (response.ok) {
+          const allProjects = await response.json()
+          setProjects(allProjects)
+        } else {
+          console.error('Failed to fetch projects')
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error)
+      }
     }
     fetchProjects()
   }, [])

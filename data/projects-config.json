@@ -8,7 +8,7 @@
   "includeRepos": [],
   "manualProjects": [],
   "repoOverrides": {
-    "Professional_Website": {
+    "ProfessionalWebsite": {
       "title": "Personal Portfolio Website",
       "description": "Full-stack portfolio built with Next.js 15, TypeScript, and Tailwind CSS. Features comprehensive SEO optimization, admin panel, dynamic GitHub integration, contact system, and responsive design. Showcases modern web development practices.",
       "featured": true,

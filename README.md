@@ -109,8 +109,8 @@ A modern, full-stack portfolio website showcasing my software engineering projec
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/dashpes/Professional_Website.git
-   cd Professional_Website
+   git clone https://github.com/dashpes/ProfessionalWebsite.git
+   cd ProfessionalWebsite
    ```
 
 2. **Install dependencies**
