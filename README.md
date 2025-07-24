@@ -24,10 +24,12 @@ A modern, full-stack portfolio website showcasing my software engineering projec
 
 ### **Backend & Data**
 - **🔧 Full-Stack Architecture** with Next.js API routes
-- **📊 GitHub Integration** - Dynamic project fetching and stats
+- **📊 Advanced GitHub Integration** - Real-time project syncing with webhooks
+- **🚀 Smart Caching System** - Intelligent cache with automatic invalidation
+- **🔍 Enhanced Language Detection** - Accurate technology tagging from all repo languages
 - **📧 Contact System** - Dual email service (Gmail SMTP + Resend)
 - **🔐 Admin Panel** - Content management with JWT authentication
-- **📝 Blog System** - MDX support for technical writing
+- **📝 Blog System** - MDX support for technical writing (ready for database)
 
 ### **SEO & Analytics**
 - **🎯 Advanced SEO** - Comprehensive meta tags, Open Graph, Twitter Cards
@@ -40,7 +42,9 @@ A modern, full-stack portfolio website showcasing my software engineering projec
 - **⚙️ TypeScript** - Full type safety across the entire stack
 - **🔒 Security First** - Environment-based configuration, input validation
 - **🧪 Quality Assurance** - ESLint, Prettier, strict type checking
-- **🚀 CI/CD Ready** - Optimized for Vercel deployment
+- **🚀 CI/CD Ready** - Optimized for Vercel deployment with pnpm
+- **⚡ Real-time Updates** - GitHub webhooks for instant project synchronization
+- **📊 Smart Caching** - Advanced caching with automatic invalidation
 
 ---
 
@@ -61,7 +65,8 @@ A modern, full-stack portfolio website showcasing my software engineering projec
 - **Data**: JSON-based configuration
 
 ### **External Integrations**
-- **GitHub API** - Project and statistics fetching
+- **GitHub API** - Advanced project and statistics fetching with language detection
+- **GitHub Webhooks** - Real-time repository synchronization
 - **Vercel Analytics** - Performance and user tracking
 - **Google Fonts** - Typography optimization
 
@@ -80,6 +85,8 @@ A modern, full-stack portfolio website showcasing my software engineering projec
 - **Image Optimization** with Next.js Image component
 - **Code Splitting** and lazy loading
 - **Edge Runtime** for API routes
+- **Smart Caching** with configurable TTL and automatic invalidation
+- **Batch API Processing** to avoid rate limits
 - **Optimized Bundle** size and loading times
 
 ### **SEO Implementation**
@@ -89,9 +96,18 @@ A modern, full-stack portfolio website showcasing my software engineering projec
 - **Canonical URLs** and sitemap generation
 - **Mobile-friendly** and Core Web Vitals optimized
 
+### **Advanced GitHub Integration**
+- **Real-time Sync** - Webhooks automatically update projects when you push code
+- **Enhanced Language Detection** - Fetches all languages used in each repository
+- **Smart Technology Tagging** - Infers technologies from repo patterns and GitHub topics
+- **Intelligent Caching** - 1-hour cache with automatic invalidation on repo changes
+- **Batch Processing** - Processes repos in batches to respect GitHub API rate limits
+- **Fallback Support** - Graceful degradation if GitHub API is unavailable
+
 ### **Security Features**
 - **Environment-based secrets** management
 - **JWT authentication** for admin access
+- **Webhook signature verification** for GitHub integration
 - **Input validation** and sanitization
 - **CORS protection** and rate limiting considerations
 - **No sensitive data** in client-side code
@@ -144,13 +160,27 @@ CONTACT_EMAIL=your-email@yourdomain.com
 GMAIL_USER=your-workspace-email@yourdomain.com  
 GMAIL_APP_PASSWORD=your_16_character_app_password
 
-# GitHub Integration (Optional - for higher API limits)
+# GitHub Integration (Recommended)
 GITHUB_TOKEN=your_github_personal_access_token
+GITHUB_WEBHOOK_SECRET=your_webhook_secret_for_real_time_updates
 
 # Admin Panel (Optional)
 ADMIN_PASSWORD=your_secure_admin_password
 JWT_SECRET=your_very_long_random_jwt_secret_key
 ```
+
+#### **GitHub Integration Setup**
+
+For real-time project updates, set up a GitHub webhook:
+
+1. **Generate webhook secret**: `openssl rand -hex 32`
+2. **Add to environment variables** (both locally and in Vercel)
+3. **Create GitHub webhook**:
+   - Repository Settings → Webhooks → Add webhook
+   - Payload URL: `https://your-domain.com/api/webhooks/github`
+   - Content type: `application/json`
+   - Secret: Use the same secret from step 1
+   - Events: Select "Repositories" or "Send me everything"
 
 ---
 
@@ -160,11 +190,17 @@ JWT_SECRET=your_very_long_random_jwt_secret_key
 ├── app/                    # Next.js 15 App Router
 │   ├── (routes)/          # Page routes
 │   ├── api/               # API endpoints
+│   │   ├── projects/      # Project data endpoints
+│   │   ├── webhooks/      # GitHub webhook handlers
+│   │   ├── cache/         # Cache management
+│   │   └── admin/         # Admin panel APIs
 │   ├── components/        # Page-specific components
 │   └── globals.css        # Global styles
 ├── components/            # Reusable UI components
 │   └── ui/               # shadcn/ui components
 ├── lib/                  # Utility functions
+│   ├── github.ts         # Enhanced GitHub API integration
+│   ├── cache.ts          # Smart caching system
 │   ├── seo.ts            # SEO utilities
 │   └── utils.ts          # General utilities
 ├── data/                 # Configuration files
@@ -183,8 +219,26 @@ JWT_SECRET=your_very_long_random_jwt_secret_key
 - **Styling**: Modify Tailwind config and CSS variables
 - **Components**: All components are modular and customizable
 
-### **GitHub Integration**
-The site automatically fetches and displays your GitHub repositories. Configure which repos to show/hide in `projects-config.json`.
+### **Advanced GitHub Integration**
+
+The site features sophisticated GitHub integration with real-time updates:
+
+**Automatic Project Sync:**
+- Fetches all your public repositories automatically
+- Detects and displays all programming languages used (not just primary)
+- Infers additional technologies from repo names, descriptions, and topics
+- Updates instantly when you push code (via webhooks)
+
+**Configuration:**
+- **Include/exclude repos**: Edit `projects-config.json`
+- **Custom project data**: Override titles, descriptions, featured status
+- **Real-time updates**: Set up GitHub webhooks for instant synchronization
+
+**Technology Detection:**
+- Primary and secondary languages from GitHub API
+- Framework detection (Next.js, React, Vue, etc.)
+- Database and tool inference (PostgreSQL, Docker, etc.)
+- GitHub topics automatically become technology tags
 
 ### **SEO Optimization**
 All pages include optimized metadata. Update the SEO constants in `lib/seo.ts` to match your personal brand and target keywords.
@@ -268,5 +322,49 @@ This portfolio demonstrates:
 - **SEO Expertise** - Technical SEO, structured data, performance
 - **DevOps Knowledge** - CI/CD, deployment, monitoring
 - **Business Acumen** - User experience, conversion optimization
+
+## 🆕 Latest Updates & Improvements
+
+### **Recent Enhancements (Latest Version)**
+
+**🚀 Advanced GitHub Integration**
+- Real-time project synchronization via GitHub webhooks
+- Enhanced language detection showing all languages per repository
+- Smart technology inference from repo patterns and GitHub topics
+- Intelligent caching system with automatic invalidation
+
+**⚡ Performance Optimizations**
+- Smart caching with configurable TTL (Time To Live)
+- Batch API processing to respect GitHub rate limits
+- Cache invalidation patterns for instant updates
+- Optimized bundle size and loading times
+
+**🔧 Developer Experience**
+- pnpm package manager for faster builds
+- Enhanced error handling and logging
+- Admin cache management endpoints
+- Comprehensive webhook security verification
+
+### **🔮 Planned Features**
+
+**Database Integration (PostgreSQL + Prisma)**
+- Full blog system with MDX support
+- Advanced project analytics and view tracking
+- Comment system for blog posts
+- Enhanced search and filtering capabilities
+
+**Content Management**
+- Rich text editor for blog posts
+- Image upload and management system
+- Draft and scheduled post publishing
+- Tag and category management
+
+**Analytics Dashboard**
+- Project view statistics
+- Popular technology trends
+- Blog post performance metrics
+- Visitor engagement analytics
+
+---
 
 Built with ❤️ by [Daniel Ashpes](https://danielashpes.com)
