@@ -6,10 +6,10 @@ declare global {
   var prisma: PrismaClient | undefined
 }
 
-// Singleton pattern for database connection
+// Serverless-optimized Prisma client setup
 export const db = globalThis.prisma || new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  // Add connection pool settings for production
+  // Optimize for serverless with connection pooling
   datasources: {
     db: {
       url: process.env.DATABASE_URL,
@@ -19,13 +19,6 @@ export const db = globalThis.prisma || new PrismaClient({
 
 if (process.env.NODE_ENV !== 'production') {
   globalThis.prisma = db
-}
-
-// Graceful shutdown for serverless
-if (process.env.NODE_ENV === 'production') {
-  process.on('beforeExit', async () => {
-    await db.$disconnect()
-  })
 }
 
 // ================================

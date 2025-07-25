@@ -3,6 +3,10 @@ import { db } from '@/lib/database'
 
 export async function GET() {
   try {
+    console.log('Starting projects API call...')
+    console.log('Environment:', process.env.NODE_ENV)
+    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL)
+    
     // Fetch projects from database with technologies
     const projects = await db.project.findMany({
       where: {
