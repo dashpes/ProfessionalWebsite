@@ -410,5 +410,19 @@ export class GitHubSyncService {
   }
 }
 
-// Export singleton instance
-export const githubSyncService = new GitHubSyncService(process.env.GITHUB_TOKEN)
+// Export lazy-initialized singleton instance
+let _githubSyncService: GitHubSyncService | null = null
+
+export const githubSyncService = {
+  get instance(): GitHubSyncService {
+    if (!_githubSyncService) {
+      _githubSyncService = new GitHubSyncService(process.env.GITHUB_TOKEN)
+    }
+    return _githubSyncService
+  },
+  
+  // Proxy methods to maintain backward compatibility
+  async syncAllProjects(triggeredBy: string, ip: string, userAgent?: string) {
+    return this.instance.syncAllProjects(triggeredBy, ip, userAgent)
+  }
+}
