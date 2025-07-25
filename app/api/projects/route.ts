@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
-import { db, trackProjectView } from '@/lib/database'
+import { db } from '@/lib/database'
 
 export async function GET() {
   try {

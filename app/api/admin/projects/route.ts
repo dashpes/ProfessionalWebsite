@@ -37,7 +37,14 @@ export async function GET(request: NextRequest) {
         order: project.displayOrder
       }))
 
-    const repoOverrides: Record<string, any> = {}
+    const repoOverrides: Record<string, {
+      title?: string
+      description?: string
+      image?: string
+      featured?: boolean
+      order?: number
+      technologies?: string[]
+    }> = {}
     projects
       .filter(p => p.source === 'GITHUB')
       .forEach(project => {

@@ -35,7 +35,7 @@ export function hashIP(ipAddress: string): string {
  * Extract country code from IP (placeholder for future geo-IP service)
  * For now returns null, can be enhanced with a geo-IP service
  */
-export function getCountryFromIP(ipAddress: string): string | null {
+export function getCountryFromIP(): string | null {
   // TODO: Integrate with geo-IP service like MaxMind or IP-API
   // For now, return null to maintain privacy
   return null

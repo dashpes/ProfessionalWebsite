@@ -11,6 +11,49 @@ interface SyncResult {
   syncedProjects: string[]
 }
 
+interface GitHubRepo {
+  id: number
+  name: string
+  full_name: string
+  description?: string
+  html_url: string
+  homepage?: string
+  stargazers_count: number
+  forks_count: number
+  language?: string
+  size: number
+  private: boolean
+  created_at: string
+  updated_at: string
+}
+
+interface ProjectOverrides {
+  title?: string
+  description?: string
+  image?: string
+  featured?: boolean
+  order?: number
+}
+
+interface ProjectData {
+  name: string
+  title: string
+  description?: string
+  githubUrl: string
+  liveUrl?: string
+  imageUrl?: string
+  category?: string
+  featured: boolean
+  displayOrder?: number
+  starsCount: number
+  forksCount: number
+  primaryLanguage?: string
+  repoSize: number
+  isPrivate: boolean
+  source: 'GITHUB' | 'MANUAL'
+  status: ProjectStatus
+}
+
 export class GitHubSyncService {
   private githubService: GitHubService
   
@@ -126,7 +169,7 @@ export class GitHubSyncService {
   /**
    * Convert GitHub repo to database project format
    */
-  private async convertRepoToProject(repo: any, overrides?: any) {
+  private async convertRepoToProject(repo: GitHubRepo, overrides?: ProjectOverrides) {
     // Extract technologies from GitHub data
     const technologies = this.githubService.extractTechnologies ? 
       await this.githubService.extractTechnologies(repo) : 
@@ -162,7 +205,7 @@ export class GitHubSyncService {
   /**
    * Create new project with technologies
    */
-  private async createProject(data: any, repo: any) {
+  private async createProject(data: ProjectData, repo: GitHubRepo) {
     const { projectData, technologies } = data
 
     // Create project
@@ -179,7 +222,7 @@ export class GitHubSyncService {
   /**
    * Update existing project with technologies
    */
-  private async updateProject(projectId: string, data: any, repo: any) {
+  private async updateProject(projectId: string, data: ProjectData, repo: GitHubRepo) {
     const { projectData, technologies } = data
 
     // Update project
@@ -249,7 +292,7 @@ export class GitHubSyncService {
   /**
    * Basic technology extraction (fallback)
    */
-  private extractBasicTechnologies(repo: any): string[] {
+  private extractBasicTechnologies(repo: GitHubRepo): string[] {
     const technologies: string[] = []
     
     if (repo.language) {
@@ -291,7 +334,7 @@ export class GitHubSyncService {
   /**
    * Infer project category from repo data
    */
-  private inferCategory(repo: any): string | null {
+  private inferCategory(repo: GitHubRepo): string | null {
     const name = repo.name.toLowerCase()
     const description = (repo.description || '').toLowerCase()
     const topics = repo.topics?.join(' ').toLowerCase() || ''
