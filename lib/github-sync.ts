@@ -100,10 +100,24 @@ export class GitHubSyncService {
         try {
           const projectData = await this.convertRepoToProject(repo, config.repoOverrides?.[repo.name])
           
-          // Check if project exists
-          const existingProject = await db.project.findUnique({
-            where: { githubId: repo.id }
-          })
+          // Check if project exists (with retry for connection issues)
+          let existingProject
+          try {
+            existingProject = await db.project.findUnique({
+              where: { githubId: repo.id }
+            })
+          } catch (dbError) {
+            // Retry once for connection issues
+            if (dbError instanceof Error && dbError.message.includes('prepared statement')) {
+              console.log(`Retrying database query for ${repo.name}...`)
+              await new Promise(resolve => setTimeout(resolve, 1000))
+              existingProject = await db.project.findUnique({
+                where: { githubId: repo.id }
+              })
+            } else {
+              throw dbError
+            }
+          }
 
           if (existingProject) {
             // Update existing project

@@ -9,10 +9,23 @@ declare global {
 // Singleton pattern for database connection
 export const db = globalThis.prisma || new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  // Add connection pool settings for production
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
 })
 
 if (process.env.NODE_ENV !== 'production') {
   globalThis.prisma = db
+}
+
+// Graceful shutdown for serverless
+if (process.env.NODE_ENV === 'production') {
+  process.on('beforeExit', async () => {
+    await db.$disconnect()
+  })
 }
 
 // ================================
@@ -98,7 +111,7 @@ export async function trackProjectView(
     const ipHash = hashIP(ip)
     const userAgent = sanitizeUserAgent(headers.get('user-agent') || undefined)
     const referrer = headers.get('referer')?.substring(0, 500) || null
-    const country = getCountryFromIP(ip)
+    const country = getCountryFromIP()
     
     await db.projectView.create({
       data: {
@@ -129,7 +142,7 @@ export async function trackBlogPostView(
     const ipHash = hashIP(ip)
     const userAgent = sanitizeUserAgent(headers.get('user-agent') || undefined)
     const referrer = headers.get('referer')?.substring(0, 500) || null
-    const country = getCountryFromIP(ip)
+    const country = getCountryFromIP()
     
     await db.blogPostView.create({
       data: {
