@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,299 +8,226 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ================================
-// PROJECTS MODELS
-// ================================
-
 model Project {
-  id              String   @id @default(cuid())
-  githubId        Int?     @unique @map("github_id")
-  name            String   @unique
-  title           String
-  description     String?
-  readmeContent   String?  @map("readme_content")
-  
-  // URLs
-  githubUrl       String?  @map("github_url")
-  liveUrl         String?  @map("live_url")
-  imageUrl        String?  @map("image_url")
-  
-  // Classification
-  category        String?
-  status          ProjectStatus @default(ACTIVE)
-  source          ProjectSource @default(GITHUB)
-  featured        Boolean  @default(false)
-  displayOrder    Int?     @map("display_order")
-  
-  // Override fields for GitHub projects
-  titleOverride       String? @map("title_override")
-  descriptionOverride String? @map("description_override")
-  imageUrlOverride    String? @map("image_url_override")
-  
-  // GitHub data
-  starsCount      Int      @default(0) @map("stars_count")
-  forksCount      Int      @default(0) @map("forks_count")
-  primaryLanguage String?  @map("primary_language")
-  repoSize        Int      @default(0) @map("repo_size")
-  isPrivate       Boolean  @default(false) @map("is_private")
-  
-  // Metadata
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  lastGithubSync  DateTime? @map("last_github_sync")
-  
-  // Relations
-  technologies    ProjectTechnology[]
-  views           ProjectView[]
-  syncHistory     GitHubSyncLog[]
-  
-  @@map("projects")
+  id                  String              @id @default(cuid())
+  githubId            Int?                @unique @map("github_id")
+  name                String              @unique
+  title               String
+  description         String?
+  readmeContent       String?             @map("readme_content")
+  githubUrl           String?             @map("github_url")
+  liveUrl             String?             @map("live_url")
+  imageUrl            String?             @map("image_url")
+  category            String?
+  status              ProjectStatus       @default(ACTIVE)
+  source              ProjectSource       @default(GITHUB)
+  featured            Boolean             @default(false)
+  displayOrder        Int?                @map("display_order")
+  titleOverride       String?             @map("title_override")
+  descriptionOverride String?             @map("description_override")
+  imageUrlOverride    String?             @map("image_url_override")
+  starsCount          Int                 @default(0) @map("stars_count")
+  forksCount          Int                 @default(0) @map("forks_count")
+  primaryLanguage     String?             @map("primary_language")
+  repoSize            Int                 @default(0) @map("repo_size")
+  isPrivate           Boolean             @default(false) @map("is_private")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  lastGithubSync      DateTime?           @map("last_github_sync")
+  syncHistory         GitHubSyncLog[]
+  technologies        ProjectTechnology[]
+  views               ProjectView[]
+
   @@index([featured])
   @@index([status])
   @@index([category])
   @@index([displayOrder])
   @@index([createdAt])
+  @@map("projects")
 }
 
 model Technology {
-  id       String @id @default(cuid())
-  name     String @unique
-  category TechnologyCategory?
-  color    String? // Hex color for UI
-  iconUrl  String? @map("icon_url")
-  
-  createdAt DateTime @default(now()) @map("created_at")
-  
-  projects ProjectTechnology[]
-  
-  @@map("technologies")
+  id        String              @id @default(cuid())
+  name      String              @unique
+  category  TechnologyCategory?
+  color     String?
+  iconUrl   String?             @map("icon_url")
+  createdAt DateTime            @default(now()) @map("created_at")
+  projects  ProjectTechnology[]
+
   @@index([category])
+  @@map("technologies")
 }
 
 model ProjectTechnology {
-  projectId    String  @map("project_id")
-  technologyId String  @map("technology_id")
-  percentage   Decimal? @db.Decimal(5,2) // Percentage of codebase
-  bytesCount   BigInt? @map("bytes_count") // Actual bytes from GitHub
-  
-  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  technology Technology @relation(fields: [technologyId], references: [id], onDelete: Cascade)
-  
+  projectId    String     @map("project_id")
+  technologyId String     @map("technology_id")
+  percentage   Decimal?   @db.Decimal(5, 2)
+  bytesCount   BigInt?    @map("bytes_count")
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  technology   Technology @relation(fields: [technologyId], references: [id], onDelete: Cascade)
+
   @@id([projectId, technologyId])
   @@map("project_technologies")
 }
 
-// ================================
-// BLOG MODELS
-// ================================
-
 model BlogPost {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  title       String   @db.VarChar(500)
-  excerpt     String?  @db.Text
-  content     String   @db.Text // MDX content
-  coverImage  String?  @map("cover_image")
-  
-  // Publication
-  status      BlogPostStatus @default(DRAFT)
-  publishedAt DateTime? @map("published_at")
-  featured    Boolean  @default(false)
-  
-  // SEO
-  metaTitle       String? @map("meta_title") @db.VarChar(255)
-  metaDescription String? @map("meta_description") @db.Text
-  keywords        String[] // PostgreSQL array
-  
-  // Analytics
-  viewCount        Int @default(0) @map("view_count")
-  readingTimeMinutes Int? @map("reading_time_minutes")
-  
-  // Metadata
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  
-  // Relations
-  categories BlogPostCategory[]
-  tags       BlogPostTag[]
-  views      BlogPostView[]
-  
-  @@map("blog_posts")
+  id                 String             @id @default(cuid())
+  slug               String             @unique
+  title              String             @db.VarChar(500)
+  excerpt            String?
+  content            String
+  coverImage         String?            @map("cover_image")
+  status             BlogPostStatus     @default(DRAFT)
+  publishedAt        DateTime?          @map("published_at")
+  featured           Boolean            @default(false)
+  metaTitle          String?            @map("meta_title") @db.VarChar(255)
+  metaDescription    String?            @map("meta_description")
+  keywords           String[]
+  viewCount          Int                @default(0) @map("view_count")
+  readingTimeMinutes Int?               @map("reading_time_minutes")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  categories         BlogPostCategory[]
+  tags               BlogPostTag[]
+  views              BlogPostView[]
+
   @@index([status])
   @@index([publishedAt])
   @@index([featured, publishedAt])
   @@index([slug])
+  @@map("blog_posts")
 }
 
 model BlogCategory {
-  id          String @id @default(cuid())
-  name        String @unique @db.VarChar(100)
-  slug        String @unique @db.VarChar(100)
-  description String? @db.Text
-  color       String? @db.VarChar(7) // Hex color
-  
-  createdAt DateTime @default(now()) @map("created_at")
-  
-  posts BlogPostCategory[]
-  
+  id          String             @id @default(cuid())
+  name        String             @unique @db.VarChar(100)
+  slug        String             @unique @db.VarChar(100)
+  description String?
+  color       String?            @db.VarChar(7)
+  createdAt   DateTime           @default(now()) @map("created_at")
+  posts       BlogPostCategory[]
+
   @@map("blog_categories")
 }
 
 model BlogTag {
-  id   String @id @default(cuid())
-  name String @unique @db.VarChar(100)
-  slug String @unique @db.VarChar(100)
-  
-  createdAt DateTime @default(now()) @map("created_at")
-  
-  posts BlogPostTag[]
-  
+  id        String        @id @default(cuid())
+  name      String        @unique @db.VarChar(100)
+  slug      String        @unique @db.VarChar(100)
+  createdAt DateTime      @default(now()) @map("created_at")
+  posts     BlogPostTag[]
+
   @@map("blog_tags")
 }
 
 model BlogPostCategory {
-  postId     String @map("post_id")
-  categoryId String @map("category_id")
-  
-  post     BlogPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  category BlogCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
+  postId     String       @map("post_id")
+  categoryId String       @map("category_id")
+  category   BlogCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  post       BlogPost     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
   @@id([postId, categoryId])
   @@map("blog_post_categories")
 }
 
 model BlogPostTag {
-  postId String @map("post_id")
-  tagId  String @map("tag_id")
-  
-  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  tag  BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  
+  postId String   @map("post_id")
+  tagId  String   @map("tag_id")
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
   @@id([postId, tagId])
   @@map("blog_post_tags")
 }
 
-// ================================
-// ANALYTICS MODELS
-// ================================
-
 model ProjectView {
   id        String   @id @default(cuid())
   projectId String   @map("project_id")
-  
-  // Visitor data (anonymized)
-  ipHash      String   @map("ip_hash") // Hashed IP for privacy
-  userAgent   String?  @map("user_agent") @db.Text
-  referrer    String?  @db.VarChar(500)
-  country     String?  @db.VarChar(2) // Country code
-  
-  viewedAt DateTime @default(now()) @map("viewed_at")
-  
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
-  @@map("project_views")
+  ipHash    String   @map("ip_hash")
+  userAgent String?  @map("user_agent")
+  referrer  String?  @db.VarChar(500)
+  country   String?  @db.VarChar(2)
+  viewedAt  DateTime @default(now()) @map("viewed_at")
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
   @@index([projectId, viewedAt])
   @@index([viewedAt])
   @@index([country])
+  @@map("project_views")
 }
 
 model BlogPostView {
-  id     String @id @default(cuid())
-  postId String @map("post_id")
-  
-  // Visitor data (anonymized)
-  ipHash           String   @map("ip_hash") // Hashed IP for privacy
-  userAgent        String?  @map("user_agent") @db.Text
+  id               String   @id @default(cuid())
+  postId           String   @map("post_id")
+  ipHash           String   @map("ip_hash")
+  userAgent        String?  @map("user_agent")
   referrer         String?  @db.VarChar(500)
-  country          String?  @db.VarChar(2) // Country code
-  
-  // Reading metrics
-  readingProgress  Decimal? @db.Decimal(5,2) // 0-100%
+  country          String?  @db.VarChar(2)
+  readingProgress  Decimal? @db.Decimal(5, 2)
   timeSpentSeconds Int?     @map("time_spent_seconds")
-  
-  viewedAt DateTime @default(now()) @map("viewed_at")
-  
-  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
-  @@map("blog_post_views")
+  viewedAt         DateTime @default(now()) @map("viewed_at")
+  post             BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
   @@index([postId, viewedAt])
   @@index([viewedAt])
   @@index([country])
+  @@map("blog_post_views")
 }
 
-// ================================
-// SECURITY & AUDIT MODELS
-// ================================
-
 model GitHubSyncLog {
-  id            String @id @default(cuid())
-  projectId     String? @map("project_id") // Nullable for general sync events
-  
-  eventType     String   @map("event_type") @db.VarChar(100) // manual_sync, webhook, scheduled
-  action        String   @db.VarChar(100) // created, updated, deleted, etc.
-  repositoryName String? @map("repository_name") @db.VarChar(255)
-  
-  success       Boolean
-  errorMessage  String? @map("error_message") @db.Text
-  changesCount  Int     @default(0) @map("changes_count") // Number of projects affected
-  
-  // Audit trail
-  triggeredBy   String?  @map("triggered_by") // Admin user ID or 'system'
-  ipAddress     String?  @map("ip_address") @db.Inet
-  userAgent     String?  @map("user_agent") @db.Text
-  
-  processedAt DateTime @default(now()) @map("processed_at")
-  
-  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  
-  @@map("github_sync_log")
+  id             String   @id @default(cuid())
+  projectId      String?  @map("project_id")
+  eventType      String   @map("event_type") @db.VarChar(100)
+  action         String   @db.VarChar(100)
+  repositoryName String?  @map("repository_name") @db.VarChar(255)
+  success        Boolean
+  errorMessage   String?  @map("error_message")
+  changesCount   Int      @default(0) @map("changes_count")
+  triggeredBy    String?  @map("triggered_by")
+  ipAddress      String?  @map("ip_address") @db.Inet
+  userAgent      String?  @map("user_agent")
+  processedAt    DateTime @default(now()) @map("processed_at")
+  project        Project? @relation(fields: [projectId], references: [id])
+
   @@index([processedAt])
   @@index([repositoryName])
   @@index([success])
   @@index([eventType])
+  @@map("github_sync_log")
 }
 
 model AdminActivity {
-  id        String @id @default(cuid())
-  
-  action    String   @db.VarChar(100) // login, project_sync, blog_create, etc.
-  resource  String?  @db.VarChar(100) // projects, blog_posts, settings
-  resourceId String? @map("resource_id") // ID of affected resource
-  
-  // Changes made
-  oldData   Json?    @map("old_data") // Previous state
-  newData   Json?    @map("new_data") // New state
-  
-  // Security info
-  ipAddress String   @map("ip_address") @db.Inet
-  userAgent String   @map("user_agent") @db.Text
-  success   Boolean  @default(true)
-  
-  createdAt DateTime @default(now()) @map("created_at")
-  
-  @@map("admin_activity")
+  id         String   @id @default(cuid())
+  action     String   @db.VarChar(100)
+  resource   String?  @db.VarChar(100)
+  resourceId String?  @map("resource_id")
+  oldData    Json?    @map("old_data")
+  newData    Json?    @map("new_data")
+  ipAddress  String   @map("ip_address") @db.Inet
+  userAgent  String   @map("user_agent")
+  success    Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+
   @@index([createdAt])
   @@index([action])
   @@index([success])
+  @@map("admin_activity")
 }
-
-// ================================
-// ENUMS
-// ================================
 
 enum ProjectStatus {
   ACTIVE
   ARCHIVED
   IN_DEVELOPMENT
   MAINTENANCE
-  
+
   @@map("project_status")
 }
 
 enum ProjectSource {
   GITHUB
   MANUAL
-  
+
   @@map("project_source")
 }
 
@@ -312,7 +236,7 @@ enum BlogPostStatus {
   PUBLISHED
   ARCHIVED
   SCHEDULED
-  
+
   @@map("blog_post_status")
 }
 
@@ -325,6 +249,6 @@ enum TechnologyCategory {
   PLATFORM
   CLOUD
   OTHER
-  
+
   @@map("technology_category")
 }
