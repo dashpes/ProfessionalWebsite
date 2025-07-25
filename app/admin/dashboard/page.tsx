@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import { Project, ProjectConfig } from '@/lib/types'
 import { Trash2, Edit, Plus, Save, LogOut } from 'lucide-react'
 import { ImageUpload } from '../components/image-upload'
+import GitHubSync from '../components/github-sync'
 
 
 export default function AdminDashboard() {
@@ -34,6 +35,8 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         const data = await response.json()
+        console.log('Admin dashboard received config:', data)
+        console.log('RepoOverrides keys:', Object.keys(data.repoOverrides || {}))
         setConfig(data)
       } else {
         toast.error('Failed to load configuration')
@@ -179,6 +182,7 @@ export default function AdminDashboard() {
         <Tabs defaultValue="projects" className="space-y-6">
           <TabsList className="bg-gray-800">
             <TabsTrigger value="projects">Projects</TabsTrigger>
+            <TabsTrigger value="github">GitHub Sync</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -268,6 +272,10 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="github" className="space-y-6">
+            <GitHubSync />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">

@@ -36,3 +36,5 @@ DEPLOYMENT.md
 SECURITY.md
 CLAUDE.md
 .vercel
+
+/lib/generated/prisma

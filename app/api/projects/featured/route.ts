@@ -1,14 +1,55 @@
 import { NextResponse } from 'next/server'
-import { projectService } from '@/lib/projects'
+import { db } from '@/lib/database'
 
 export async function GET() {
   try {
-    const featuredProjects = await projectService.getFeaturedProjects()
+    // Fetch featured projects from database
+    const featuredProjects = await db.project.findMany({
+      where: {
+        status: 'ACTIVE',
+        featured: true
+      },
+      include: {
+        technologies: {
+          include: {
+            technology: true
+          },
+          orderBy: {
+            percentage: 'desc'
+          }
+        }
+      },
+      orderBy: [
+        { displayOrder: 'asc' },
+        { starsCount: 'desc' },
+        { createdAt: 'desc' }
+      ],
+      take: 6 // Limit to 6 featured projects
+    })
+
+    // Transform to match expected format
+    const transformedProjects = featuredProjects.map(project => ({
+      id: project.name,
+      title: project.title,
+      description: project.description || 'No description available',
+      technologies: project.technologies.map(pt => pt.technology.name),
+      github: project.githubUrl,
+      live: project.liveUrl,
+      featured: project.featured,
+      manual: false,
+      status: project.status.toLowerCase(),
+      image: project.imageUrl,
+      category: project.category,
+      order: project.displayOrder,
+      stars: project.starsCount,
+      forks: project.forksCount,
+      language: project.primaryLanguage
+    }))
     
-    // Cache for 5 minutes to avoid excessive GitHub API calls
-    return NextResponse.json(featuredProjects, {
+    // Cache for longer since database is fast
+    return NextResponse.json(transformedProjects, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=150'
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=1800' // 1 hour cache
       }
     })
   } catch (error) {
