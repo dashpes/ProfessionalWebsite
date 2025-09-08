@@ -17,6 +17,15 @@ interface GitHubUser {
   created_at: string
 }
 
+interface GitHubCommit {
+  sha: string
+  commit: {
+    author: {
+      date: string
+    }
+  }
+}
+
 export async function GET() {
   try {
     const headers: HeadersInit = {
@@ -42,6 +51,28 @@ export async function GET() {
     const user: GitHubUser = await userResponse.json()
     const repos: GitHubRepo[] = await reposResponse.json()
 
+    // Fetch commit counts for all repositories
+    let totalCommits = 0
+    const commitPromises = repos.slice(0, 20).map(async (repo) => { // Limit to first 20 repos to avoid rate limits
+      try {
+        const commitsResponse = await fetch(
+          `https://api.github.com/repos/${GITHUB_USERNAME}/${repo.name}/commits?author=${GITHUB_USERNAME}&per_page=100`,
+          { headers }
+        )
+        if (commitsResponse.ok) {
+          const commits: GitHubCommit[] = await commitsResponse.json()
+          return commits.length
+        }
+        return 0
+      } catch (error) {
+        console.warn(`Failed to fetch commits for ${repo.name}:`, error)
+        return 0
+      }
+    })
+
+    const commitCounts = await Promise.all(commitPromises)
+    totalCommits = commitCounts.reduce((sum, count) => sum + count, 0)
+
     // Calculate stats
     const totalStars = repos.reduce((sum, repo) => sum + repo.stargazers_count, 0)
     const totalForks = repos.reduce((sum, repo) => sum + repo.forks_count, 0)
@@ -65,6 +96,7 @@ export async function GET() {
       totalRepos: user.public_repos,
       totalStars,
       totalForks,
+      totalCommits,
       mostStarredRepo: mostStarredRepo ? {
         name: mostStarredRepo.name,
         stars: mostStarredRepo.stargazers_count,
@@ -89,6 +121,7 @@ export async function GET() {
       totalRepos: 0,
       totalStars: 0,
       totalForks: 0,
+      totalCommits: 0,
       mostStarredRepo: null,
       recentActivity: 'Unknown'
     }, { 

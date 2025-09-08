@@ -8,6 +8,7 @@ interface GitHubStats {
   totalRepos: number
   totalStars: number
   totalForks: number
+  totalCommits: number
   mostStarredRepo: {
     name: string
     stars: number
@@ -28,6 +29,7 @@ export default function GitHubStatsCompact() {
   const animatedRepos = useCounterAnimation(stats?.totalRepos || 0, 1500, isVisible)
   const animatedStars = useCounterAnimation(stats?.totalStars || 0, 2000, isVisible)
   const animatedForks = useCounterAnimation(stats?.totalForks || 0, 2500, isVisible)
+  const animatedCommits = useCounterAnimation(stats?.totalCommits || 0, 3000, isVisible)
 
   useEffect(() => {
     fetchGitHubStats()
@@ -140,6 +142,18 @@ export default function GitHubStatsCompact() {
           </div>
           <div className="text-xl font-bold text-blue-400 transform group-hover:scale-110 transition-transform">
             {animatedForks}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between group">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-gray-900" />
+            </div>
+            <span className="text-gray-300 text-sm">Commits</span>
+          </div>
+          <div className="text-xl font-bold text-green-400 transform group-hover:scale-110 transition-transform">
+            {animatedCommits}
           </div>
         </div>
       </div>

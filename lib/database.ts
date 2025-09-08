@@ -6,15 +6,9 @@ declare global {
   var prisma: PrismaClient | undefined
 }
 
-// Serverless-optimized Prisma client setup
+// Standard Prisma client setup
 export const db = globalThis.prisma || new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  // Optimize for serverless with connection pooling
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
 })
 
 if (process.env.NODE_ENV !== 'production') {

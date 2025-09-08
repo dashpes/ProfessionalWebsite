@@ -10,6 +10,7 @@ interface GitHubStats {
   totalRepos: number
   totalStars: number
   totalForks: number
+  totalCommits: number
   mostStarredRepo: {
     name: string
     stars: number
@@ -32,6 +33,7 @@ export default function GitHubStats() {
   const animatedRepos = useCounterAnimation(stats?.totalRepos || 0, 2000, isVisible)
   const animatedStars = useCounterAnimation(stats?.totalStars || 0, 2500, isVisible)
   const animatedForks = useCounterAnimation(stats?.totalForks || 0, 3000, isVisible)
+  const animatedCommits = useCounterAnimation(stats?.totalCommits || 0, 3500, isVisible)
 
   useEffect(() => {
     fetchGitHubStats()
@@ -41,7 +43,7 @@ export default function GitHubStats() {
     // Show everything immediately - no intersection observer delay
     setIsVisible(true)
     setTitleVisible(true)
-    setCardsVisible([0, 1, 2])
+    setCardsVisible([0, 1, 2, 3])
   }, [])
 
   const fetchGitHubStats = async () => {
@@ -117,7 +119,7 @@ export default function GitHubStats() {
         </div>
 
         {/* Main Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           {/* Repositories */}
           <div className={`text-center group transform transition-all duration-600 ease-out ${
             cardsVisible.includes(0) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -151,6 +153,16 @@ export default function GitHubStats() {
                 <div className="text-3xl md:text-4xl font-bold text-blue-400">{animatedForks}</div>
               </div>
               <div className="text-gray-400 uppercase tracking-wide text-xs">Repository Forks</div>
+            </div>
+          </div>
+
+          {/* Commits */}
+          <div className={`text-center group transform transition-all duration-600 ease-out ${
+            cardsVisible.includes(3) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}>
+            <div className="bg-gray-900 rounded-lg p-5 border border-gray-800 hover:border-green-500 transition-all duration-300 hover:shadow-lg hover:shadow-green-500/10 transform hover:scale-105">
+              <div className="text-3xl md:text-4xl font-bold text-green-400 mb-2">{animatedCommits}</div>
+              <div className="text-gray-400 uppercase tracking-wide text-xs">Total Commits</div>
             </div>
           </div>
         </div>
