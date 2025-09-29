@@ -45,10 +45,6 @@ jobs:
           fetch-depth: 0
 
       - name: Deploy to Heroku
-        uses: akhileshns/heroku-deploy@v3.13.15
-        with:
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: "danielashpes-portfolio"
-          heroku_email: "daniel.ashpes@gmail.com"
-          usedocker: false
-          dontautocreate: true
+        run: |
+          git remote add heroku https://heroku:${{ secrets.HEROKU_API_KEY }}@git.heroku.com/danielashpes-portfolio.git
+          git push heroku main -f

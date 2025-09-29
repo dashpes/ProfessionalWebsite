@@ -65,7 +65,7 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
   }
 
   return (
-    <div className="w-full max-w-[420px] mx-auto backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl overflow-hidden transition-all duration-500 ease-out hover:scale-[1.01] hover:bg-white/8 hover:border-white/20 shadow-2xl">
+    <div className="w-full max-w-[420px] mx-auto backdrop-blur-xl bg-white/90 border border-gray-200 rounded-2xl overflow-hidden transition-all duration-500 ease-out hover:scale-[1.01] hover:bg-white hover:border-gray-300 shadow-2xl">
       {/* Project Image */}
       {project.image && (
         <div className="relative h-48 overflow-hidden">
@@ -93,16 +93,16 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
           <div className="flex items-start gap-4">
             {/* Project Icon/Avatar */}
             <div className="relative">
-              <div className="w-16 h-16 rounded-2xl border-3 border-white/30 bg-white/10 backdrop-blur-xl shadow-lg flex items-center justify-center">
-                <Code className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 rounded-2xl border-3 border-gray-300 bg-gray-100 backdrop-blur-xl shadow-lg flex items-center justify-center">
+                <Code className="h-8 w-8 text-gray-700" />
               </div>
             </div>
 
             {/* Name, Description, and Primary Action */}
             <div className="flex-1 space-y-2">
               <div className="space-y-1">
-                <h1 className="text-xl font-semibold text-white leading-tight">{project.title}</h1>
-                <p className="text-white/70 text-sm font-medium">
+                <h1 className="text-xl font-semibold text-gray-900 leading-tight">{project.title}</h1>
+                <p className="text-gray-600 text-sm font-medium">
                   {project.language ? `${project.language} Project` : 'Project'}
                 </p>
               </div>
@@ -133,7 +133,7 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
         </div>
 
         {/* Project Description */}
-        <p className="text-white/85 text-sm leading-relaxed">{project.description}</p>
+        <p className="text-gray-700 text-sm leading-relaxed">{project.description}</p>
 
         {/* Technologies */}
         <div className="flex flex-wrap gap-1.5">
@@ -147,7 +147,7 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
           ))}
           {project.technologies.length > 4 && (
             <Badge
-              className="bg-white/10 border border-white/20 text-white/70 text-xs px-2.5 py-1"
+              className="bg-gray-100 border border-gray-300 text-gray-600 text-xs px-2.5 py-1"
             >
               +{project.technologies.length - 4} more
             </Badge>
@@ -157,40 +157,40 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
         {/* Project Stats */}
         <div className="grid grid-cols-4 gap-3 py-2">
           <div className="text-center space-y-1">
-            <p className="text-white font-semibold text-base">{formatNumber(project.stars)}</p>
-            <p className="text-white/60 text-xs font-medium">Stars</p>
+            <p className="text-gray-900 font-semibold text-base">{formatNumber(project.stars)}</p>
+            <p className="text-gray-500 text-xs font-medium">Stars</p>
           </div>
           <div className="text-center space-y-1">
-            <p className="text-white font-semibold text-base">{formatNumber(project.forks)}</p>
-            <p className="text-white/60 text-xs font-medium">Forks</p>
+            <p className="text-gray-900 font-semibold text-base">{formatNumber(project.forks)}</p>
+            <p className="text-gray-500 text-xs font-medium">Forks</p>
           </div>
           <div className="text-center space-y-1">
-            <p className="text-white font-semibold text-base">{project.language?.slice(0, 2) || "JS"}</p>
-            <p className="text-white/60 text-xs font-medium">Lang</p>
+            <p className="text-gray-900 font-semibold text-base">{project.language?.slice(0, 2) || "JS"}</p>
+            <p className="text-gray-500 text-xs font-medium">Lang</p>
           </div>
           <div className="text-center space-y-1">
-            <p className="text-white font-semibold text-base">{formatSize(project.size)}</p>
-            <p className="text-white/60 text-xs font-medium">Size</p>
+            <p className="text-gray-900 font-semibold text-base">{formatSize(project.size)}</p>
+            <p className="text-gray-500 text-xs font-medium">Size</p>
           </div>
         </div>
 
         {/* Project Info */}
-        <div className="space-y-2.5 bg-white/5 rounded-xl p-4 border border-white/10">
-          <div className="flex items-center gap-3 text-white/85 text-sm">
-            <Code className="h-4 w-4 text-blue-400 flex-shrink-0" />
+        <div className="space-y-2.5 bg-gray-50 rounded-xl p-4 border border-gray-200">
+          <div className="flex items-center gap-3 text-gray-700 text-sm">
+            <Code className="h-4 w-4 text-blue-600 flex-shrink-0" />
             <span className="font-medium">{project.language || 'Multiple Languages'}</span>
           </div>
 
           {project.status && (
-            <div className="flex items-center gap-3 text-white/85 text-sm">
-              <Calendar className="h-4 w-4 text-blue-400 flex-shrink-0" />
+            <div className="flex items-center gap-3 text-gray-700 text-sm">
+              <Calendar className="h-4 w-4 text-blue-600 flex-shrink-0" />
               <span className="font-medium capitalize">{project.status.replace('-', ' ')}</span>
             </div>
           )}
 
           {project.github && (
-            <div className="flex items-center gap-3 text-white/85 text-sm">
-              <Github className="h-4 w-4 text-blue-400 flex-shrink-0" />
+            <div className="flex items-center gap-3 text-gray-700 text-sm">
+              <Github className="h-4 w-4 text-blue-600 flex-shrink-0" />
               <span className="font-medium truncate">
                 {project.github.replace('https://github.com/', '')}
               </span>
@@ -198,8 +198,8 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
           )}
 
           {project.live && (
-            <div className="flex items-center gap-3 text-white/85 text-sm">
-              <Globe className="h-4 w-4 text-blue-400 flex-shrink-0" />
+            <div className="flex items-center gap-3 text-gray-700 text-sm">
+              <Globe className="h-4 w-4 text-blue-600 flex-shrink-0" />
               <span className="font-medium truncate">Live Demo Available</span>
             </div>
           )}
@@ -221,20 +221,20 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
 
           <Button
             onClick={handleWatch}
-            className={`bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 text-white transition-all duration-300 hover:scale-[1.02] shadow-md ${
-              isWatching ? "bg-blue-500/20 border-blue-400/30" : ""
+            className={`bg-gray-100 hover:bg-gray-200 border border-gray-300 hover:border-gray-400 text-gray-700 transition-all duration-300 hover:scale-[1.02] shadow-md ${
+              isWatching ? "bg-blue-100 border-blue-300 text-blue-700" : ""
             }`}
           >
-            <Eye className={`h-4 w-4 transition-colors duration-300 ${isWatching ? "text-blue-400" : ""}`} />
+            <Eye className={`h-4 w-4 transition-colors duration-300 ${isWatching ? "text-blue-600" : ""}`} />
           </Button>
 
           <Button
             onClick={handleLike}
-            className={`bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 text-white transition-all duration-300 hover:scale-[1.02] shadow-md ${
-              isLiked ? "bg-red-500/20 border-red-400/30" : ""
+            className={`bg-gray-100 hover:bg-gray-200 border border-gray-300 hover:border-gray-400 text-gray-700 transition-all duration-300 hover:scale-[1.02] shadow-md ${
+              isLiked ? "bg-red-100 border-red-300 text-red-700" : ""
             }`}
           >
-            <Heart className={`h-4 w-4 transition-colors duration-300 ${isLiked ? "fill-red-400 text-red-400" : ""}`} />
+            <Heart className={`h-4 w-4 transition-colors duration-300 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
           </Button>
         </div>
       </div>

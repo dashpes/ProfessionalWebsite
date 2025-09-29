@@ -79,33 +79,33 @@ function ProjectsLoading() {
       {[...Array(6)].map((_, i) => (
         <div
           key={i}
-          className="w-full max-w-[420px] mx-auto backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
+          className="w-full max-w-[420px] mx-auto backdrop-blur-xl bg-white/90 border border-gray-200 rounded-2xl overflow-hidden shadow-2xl"
         >
           {/* Image skeleton */}
-          <div className="h-48 animate-pulse bg-white/10" />
+          <div className="h-48 animate-pulse bg-gray-200" />
 
           {/* Content skeleton */}
           <div className="p-6 space-y-5">
             {/* Header skeleton */}
             <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-white/10 animate-pulse" />
+              <div className="w-16 h-16 rounded-2xl bg-gray-200 animate-pulse" />
               <div className="flex-1 space-y-2">
-                <div className="h-5 bg-white/10 rounded animate-pulse w-3/4" />
-                <div className="h-4 bg-white/10 rounded animate-pulse w-1/2" />
-                <div className="h-6 bg-white/10 rounded animate-pulse w-24" />
+                <div className="h-5 bg-gray-200 rounded animate-pulse w-3/4" />
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2" />
+                <div className="h-6 bg-gray-200 rounded animate-pulse w-24" />
               </div>
             </div>
 
             {/* Description skeleton */}
             <div className="space-y-2">
-              <div className="h-4 bg-white/10 rounded animate-pulse w-full" />
-              <div className="h-4 bg-white/10 rounded animate-pulse w-2/3" />
+              <div className="h-4 bg-gray-200 rounded animate-pulse w-full" />
+              <div className="h-4 bg-gray-200 rounded animate-pulse w-2/3" />
             </div>
 
             {/* Technologies skeleton */}
             <div className="flex flex-wrap gap-1.5">
               {[...Array(4)].map((_, j) => (
-                <div key={j} className="h-6 w-16 rounded-full bg-white/10 animate-pulse" />
+                <div key={j} className="h-6 w-16 rounded-full bg-gray-200 animate-pulse" />
               ))}
             </div>
 
@@ -113,27 +113,27 @@ function ProjectsLoading() {
             <div className="grid grid-cols-4 gap-3 py-2">
               {[...Array(4)].map((_, j) => (
                 <div key={j} className="text-center space-y-1">
-                  <div className="h-5 bg-white/10 rounded animate-pulse mx-auto w-8" />
-                  <div className="h-3 bg-white/10 rounded animate-pulse w-full" />
+                  <div className="h-5 bg-gray-200 rounded animate-pulse mx-auto w-8" />
+                  <div className="h-3 bg-gray-200 rounded animate-pulse w-full" />
                 </div>
               ))}
             </div>
 
             {/* Info section skeleton */}
-            <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-2.5">
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-2.5">
               {[...Array(3)].map((_, j) => (
                 <div key={j} className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-white/10 rounded animate-pulse" />
-                  <div className="h-4 bg-white/10 rounded animate-pulse flex-1" />
+                  <div className="w-4 h-4 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-4 bg-gray-200 rounded animate-pulse flex-1" />
                 </div>
               ))}
             </div>
 
             {/* Buttons skeleton */}
             <div className="flex gap-2.5 pt-1">
-              <div className="h-10 bg-white/10 rounded animate-pulse flex-1" />
-              <div className="h-10 w-10 bg-white/10 rounded animate-pulse" />
-              <div className="h-10 w-10 bg-white/10 rounded animate-pulse" />
+              <div className="h-10 bg-gray-200 rounded animate-pulse flex-1" />
+              <div className="h-10 w-10 bg-gray-200 rounded animate-pulse" />
+              <div className="h-10 w-10 bg-gray-200 rounded animate-pulse" />
             </div>
           </div>
         </div>

@@ -17,63 +17,6 @@ export default function ContentSection() {
   const sectionRef = useRef<HTMLElement>(null)
   const animationTriggered = useRef(false)
 
-  // Check session storage on mount to see if animation was already completed
-  useEffect(() => {
-    const wasCompleted = sessionStorage.getItem('content-section-animated')
-    if (wasCompleted === 'true') {
-      // Skip animation - show everything immediately
-      setDisplayedParagraph(paragraphText)
-      setCurrentPhase("complete")
-      setHasAnimated(true)
-      setAnimationComplete(true)
-      setIsVisible(true)
-      animationTriggered.current = true
-    }
-  }, [])
-
-  // Intersection Observer to trigger animations when section comes into view
-  useEffect(() => {
-    // Don't create observer if animation was already completed or triggered
-    if (animationComplete || hasAnimated || animationTriggered.current) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries
-        // Only trigger if we haven't animated yet AND we're not currently animating
-        if (entry.isIntersecting && !animationTriggered.current && !hasAnimated && !isAnimating && !animationComplete) {
-          animationTriggered.current = true
-          setIsVisible(true)
-          startContentAnimation()
-          // Immediately disconnect the observer to prevent retriggering
-          observer.disconnect()
-        }
-      },
-      {
-        threshold: 0.3, // Trigger when 30% of the section is visible
-        rootMargin: "-100px 0px" // Trigger a bit after the section starts to appear
-      }
-    )
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current)
-    }
-
-    return () => {
-      observer.disconnect()
-    }
-  }, [animationComplete, hasAnimated, isAnimating, startContentAnimation]) // Add missing dependencies
-
-  // Cursor blinking effect
-  useEffect(() => {
-    if (!isVisible) return
-
-    const cursorTimer = setInterval(() => {
-      setShowCursor(prev => !prev)
-    }, 500)
-
-    return () => clearInterval(cursorTimer)
-  }, [isVisible])
-
   // Typewriter animation
   const typeText = (text: string, setter: (value: string) => void, delay: number = 30) => {
     return new Promise<void>((resolve) => {
@@ -119,7 +62,64 @@ export default function ContentSection() {
     } finally {
       setIsAnimating(false)
     }
-  }, [hasAnimated, isAnimating, animationComplete, paragraphText, setDisplayedParagraph, setCurrentPhase, setHasAnimated, setIsAnimating, setAnimationComplete])
+  }, [hasAnimated, isAnimating, animationComplete, paragraphText])
+
+  // Check session storage on mount to see if animation was already completed
+  useEffect(() => {
+    const wasCompleted = sessionStorage.getItem('content-section-animated')
+    if (wasCompleted === 'true') {
+      // Skip animation - show everything immediately
+      setDisplayedParagraph(paragraphText)
+      setCurrentPhase("complete")
+      setHasAnimated(true)
+      setAnimationComplete(true)
+      setIsVisible(true)
+      animationTriggered.current = true
+    }
+  }, [])
+
+  // Intersection Observer to trigger animations when section comes into view
+  useEffect(() => {
+    // Don't create observer if animation was already completed or triggered
+    if (animationComplete || hasAnimated || animationTriggered.current) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries
+        // Only trigger if we haven't animated yet AND we're not currently animating
+        if (entry.isIntersecting && !animationTriggered.current && !hasAnimated && !isAnimating && !animationComplete) {
+          animationTriggered.current = true
+          setIsVisible(true)
+          startContentAnimation()
+          // Immediately disconnect the observer to prevent retriggering
+          observer.disconnect()
+        }
+      },
+      {
+        threshold: 0.3, // Trigger when 30% of the section is visible
+        rootMargin: "-100px 0px" // Trigger a bit after the section starts to appear
+      }
+    )
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current)
+    }
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [animationComplete, hasAnimated, isAnimating, startContentAnimation])
+
+  // Cursor blinking effect
+  useEffect(() => {
+    if (!isVisible) return
+
+    const cursorTimer = setInterval(() => {
+      setShowCursor(prev => !prev)
+    }, 500)
+
+    return () => clearInterval(cursorTimer)
+  }, [isVisible])
 
   const getCursorPosition = () => {
     switch (currentPhase) {
