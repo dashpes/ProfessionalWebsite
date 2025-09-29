@@ -6,29 +6,61 @@ import { MenuIcon } from "lucide-react"
 
 export default function NavigationDropdown() {
   return (
-    <div className="fixed top-4 right-4 z-50">
+    <div className="fixed top-6 right-6 z-[100]">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon" className="h-9 w-9 bg-transparent">
-            <MenuIcon className="h-5 w-5" />
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-12 w-12 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300"
+          >
+            <MenuIcon className="h-6 w-6" />
             <span className="sr-only">Toggle navigation menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent
+          align="end"
+          className="bg-white/15 backdrop-blur-[12px] border-white/30 shadow-lg shadow-[#5B2C91]/15 mt-2"
+        >
           <DropdownMenuItem asChild>
-            <Link href="/">Home</Link>
+            <Link
+              href="/"
+              className="text-[#2A2A2A] hover:bg-white/20 hover:text-[#5B2C91] transition-colors font-medium"
+            >
+              Home
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/about">About</Link>
+            <Link
+              href="/about"
+              className="text-[#2A2A2A] hover:bg-white/20 hover:text-[#5B2C91] transition-colors font-medium"
+            >
+              About
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/projects">Projects</Link>
+            <Link
+              href="/projects"
+              className="text-[#2A2A2A] hover:bg-white/20 hover:text-[#5B2C91] transition-colors font-medium"
+            >
+              Projects
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/blog">Blog</Link>
+            <Link
+              href="/blog"
+              className="text-[#2A2A2A] hover:bg-white/20 hover:text-[#5B2C91] transition-colors font-medium"
+            >
+              Blog
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/contact">Contact</Link>
+            <Link
+              href="/contact"
+              className="text-[#2A2A2A] hover:bg-white/20 hover:text-[#5B2C91] transition-colors font-medium"
+            >
+              Contact
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

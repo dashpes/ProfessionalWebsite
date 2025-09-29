@@ -29,7 +29,7 @@ export default function SimpleWavesTest() {
     console.log("🌊 SimpleWavesTest: Canvas size set to", canvas.width, "x", canvas.height)
 
     // Draw a simple test pattern
-    ctx.strokeStyle = "rgba(139, 92, 246, 0.8)"
+    ctx.strokeStyle = "rgba(91, 44, 145, 0.8)" // Royal Purple: #5B2C91
     ctx.lineWidth = 2
 
     for (let i = 0; i < 10; i++) {

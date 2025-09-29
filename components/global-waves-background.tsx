@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation"
 import Waves from "./waves"
-import SimpleWavesTest from "./simple-waves-test"
 
 export default function GlobalWavesBackground() {
   const pathname = usePathname()
@@ -10,9 +9,9 @@ export default function GlobalWavesBackground() {
 
   console.log("🌊 GlobalWavesBackground: Rendering on path:", pathname, "isHomePage:", isHomePage)
 
-  // Configuration for homepage (interactive)
+  // Configuration for homepage (interactive) - Using Royal Purple from design system
   const homeConfig = {
-    lineColor: "rgba(139, 92, 246, 0.25)",
+    lineColor: "rgba(91, 44, 145, 0.3)", // Royal Purple: #5B2C91
     backgroundColor: "transparent",
     waveAmpX: 25,
     waveAmpY: 15,
@@ -26,19 +25,19 @@ export default function GlobalWavesBackground() {
     interactive: true
   }
 
-  // Configuration for other pages (subtle, non-interactive) - DEBUGGING WITH HIGH VISIBILITY
+  // Configuration for other pages (subtle, non-interactive) - Using Royal Purple from design system
   const otherPagesConfig = {
-    lineColor: "rgba(139, 92, 246, 0.8)", // VERY HIGH opacity for debugging
+    lineColor: "rgba(91, 44, 145, 0.2)", // Royal Purple: #5B2C91, subtle opacity
     backgroundColor: "transparent",
-    waveAmpX: 40, // Large amplitude for visibility
-    waveAmpY: 25,
-    waveSpeedX: 0.015, // Fast movement for debugging
-    waveSpeedY: 0.012,
-    xGap: 15, // Tight spacing for visibility
-    yGap: 30,
+    waveAmpX: 25,
+    waveAmpY: 15,
+    waveSpeedX: 0.01,
+    waveSpeedY: 0.008,
+    xGap: 20,
+    yGap: 40,
     maxCursorMove: 0, // No cursor movement effect
-    friction: 0.95,
-    tension: 0.002,
+    friction: 0.925,
+    tension: 0.005,
     interactive: false
   }
 

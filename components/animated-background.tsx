@@ -29,10 +29,10 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
     return () => mediaQuery.removeEventListener("change", handler)
   }, [])
 
-  // Different intensity configurations
+  // Different intensity configurations - Using Royal Purple from design system
   const intensityConfig = {
     subtle: {
-      lineColor: "rgba(139, 92, 246, 0.15)",
+      lineColor: "rgba(91, 44, 145, 0.15)", // Royal Purple: #5B2C91
       waveAmpX: 15,
       waveAmpY: 10,
       waveSpeedX: 0.006,
@@ -42,7 +42,7 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
       maxCursorMove: 50,
     },
     normal: {
-      lineColor: "rgba(139, 92, 246, 0.25)",
+      lineColor: "rgba(91, 44, 145, 0.25)", // Royal Purple: #5B2C91
       waveAmpX: 25,
       waveAmpY: 15,
       waveSpeedX: 0.01,
@@ -52,7 +52,7 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
       maxCursorMove: 80,
     },
     intense: {
-      lineColor: "rgba(139, 92, 246, 0.35)",
+      lineColor: "rgba(91, 44, 145, 0.35)", // Royal Purple: #5B2C91
       waveAmpX: 35,
       waveAmpY: 20,
       waveSpeedX: 0.015,
@@ -63,10 +63,10 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
     }
   }
 
-  // Theme-based color adjustments
+  // Theme-based color adjustments - Using Royal Purple from design system
   const themeConfig = {
     lineColor: theme === "light"
-      ? "rgba(109, 40, 217, 0.2)" // Darker purple for light theme
+      ? "rgba(91, 44, 145, 0.2)" // Royal Purple for light theme: #5B2C91
       : intensityConfig[intensity].lineColor,
     backgroundColor: "transparent"
   }
@@ -82,7 +82,7 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
   if (prefersReducedMotion) {
     console.log("🌊 AnimatedBackground: Skipping waves due to reduced motion preference")
     return (
-      <div className={`relative ${className}`} style={{ backgroundColor: "#000000" }}>
+      <div className={`relative ${className}`} style={{ backgroundColor: "#F5F2E8" }}>
         {children}
       </div>
     )
@@ -91,13 +91,12 @@ const AnimatedBackground: React.FC<AnimatedBackgroundProps> = ({
   console.log("🌊 AnimatedBackground: Rendering waves with config", waveConfig)
 
   return (
-    <div className={`relative ${className}`} style={{ backgroundColor: "#000000" }}>
+    <div className={`relative ${className}`} style={{ backgroundColor: "#F5F2E8" }}>
       {/* Background layer */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{ zIndex: 0 }}
       >
-        {console.log("🌊 AnimatedBackground: About to render Waves component")}
         <Waves
           {...waveConfig}
           className="w-full h-full"

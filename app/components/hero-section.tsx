@@ -1,17 +1,23 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 // Global variable to track animation state across component mounts
 let hasPlayedInSession = false
 
 export default function HeroSection() {
   const nameText = "Daniel Ashpes"
+  const subtitleText = "Senior Software Engineer & Data Scientist"
 
   // State for animation
   const [displayedName, setDisplayedName] = useState("")
+  const [displayedSubtitle, setDisplayedSubtitle] = useState("")
   const [showCursor, setShowCursor] = useState(true)
   const [isComplete, setIsComplete] = useState(false)
+  const [showSubtitle, setShowSubtitle] = useState(false)
+  const [showButtons, setShowButtons] = useState(false)
 
   // Ref to prevent double execution
   const hasInitialized = useRef(false)
@@ -38,8 +44,11 @@ export default function HeroSection() {
     const shouldSkip = hasPlayedInSession || sessionPlayed === 'true'
 
     if (shouldSkip) {
-      // Skip animation - show name immediately
+      // Skip animation - show everything immediately
       setDisplayedName(nameText)
+      setDisplayedSubtitle(subtitleText)
+      setShowSubtitle(true)
+      setShowButtons(true)
       setIsComplete(true)
       return
     }
@@ -60,9 +69,18 @@ export default function HeroSection() {
     }
 
     const startAnimation = async () => {
-      // Type name only
+      // Type name first
       await typeText(nameText, setDisplayedName, 30)
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, 800))
+
+      // Show and type subtitle
+      setShowSubtitle(true)
+      await typeText(subtitleText, setDisplayedSubtitle, 25)
+      await new Promise(resolve => setTimeout(resolve, 800))
+
+      // Show buttons
+      setShowButtons(true)
+      await new Promise(resolve => setTimeout(resolve, 300))
 
       // Mark as complete
       setIsComplete(true)
@@ -87,12 +105,53 @@ export default function HeroSection() {
   return (
     <section className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-tight text-white">
+        <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-tight mb-6" style={{color: '#2A2A2A'}}>
           {displayedName}
-          {!isComplete && (
-            <span className={`inline-block w-1 h-20 md:h-24 lg:h-28 bg-white ml-2 ${showCursor ? 'opacity-100' : 'opacity-0'}`} />
+          {!isComplete && !showSubtitle && (
+            <span className={`inline-block w-1 h-20 md:h-24 lg:h-28 ml-2 ${showCursor ? 'opacity-100' : 'opacity-0'}`} style={{backgroundColor: '#2A2A2A'}} />
           )}
         </h1>
+        {showSubtitle && (
+          <h2 className="text-2xl md:text-4xl font-semibold leading-tight mb-8" style={{color: '#5B2C91'}}>
+            {displayedSubtitle}
+            {!isComplete && showSubtitle && !showButtons && (
+              <span className={`inline-block w-1 h-6 md:h-8 ml-2 ${showCursor ? 'opacity-100' : 'opacity-0'}`} style={{backgroundColor: '#5B2C91'}} />
+            )}
+          </h2>
+        )}
+        {showButtons && (
+          <div className={`flex flex-col sm:flex-row gap-4 justify-center items-center transition-all duration-1000 ${
+            showButtons ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4'
+          }`}>
+            <Link href="/projects">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]"
+              >
+                View My Work
+              </Button>
+            </Link>
+            <Link href="/about">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]"
+              >
+                Get to Know Me
+              </Button>
+            </Link>
+            <Link href="/contact">
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]"
+              >
+                Get in Touch
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   )

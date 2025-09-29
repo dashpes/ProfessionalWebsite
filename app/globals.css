@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 47 25% 95%; /* Cream: #F5F2E8 */
+    --foreground: 0 0% 16%; /* Charcoal: #2A2A2A */
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -36,8 +36,8 @@
   }
 
   .dark {
-    --background: 0 0% 0%; /* Pure black background */
-    --foreground: 210 40% 98%;
+    --background: 47 25% 95%; /* Keep Cream even in dark mode: #F5F2E8 */
+    --foreground: 0 0% 16%; /* Charcoal: #2A2A2A */
 
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
@@ -75,21 +75,21 @@
   }
 }
 
-/* Animated waves CSS variables */
+/* Animated waves CSS variables - Using Royal Purple from design system */
 :root {
-  --wave-purple-light: rgba(167, 139, 250, 0.25);
-  --wave-purple-medium: rgba(139, 92, 246, 0.3);
-  --wave-purple-dark: rgba(109, 40, 217, 0.35);
-  --wave-purple-subtle: rgba(139, 92, 246, 0.15);
-  --wave-cursor-glow: rgba(139, 92, 246, 0.2);
+  --wave-purple-light: rgba(139, 109, 184, 0.25); /* Lavender: #8B6DB8 */
+  --wave-purple-medium: rgba(91, 44, 145, 0.3); /* Royal Purple: #5B2C91 */
+  --wave-purple-dark: rgba(61, 27, 92, 0.35); /* Deep Plum: #3D1B5C */
+  --wave-purple-subtle: rgba(91, 44, 145, 0.15); /* Royal Purple: #5B2C91 */
+  --wave-cursor-glow: rgba(91, 44, 145, 0.2); /* Royal Purple: #5B2C91 */
 }
 
 .dark {
-  --wave-purple-light: rgba(167, 139, 250, 0.2);
-  --wave-purple-medium: rgba(139, 92, 246, 0.25);
-  --wave-purple-dark: rgba(109, 40, 217, 0.3);
-  --wave-purple-subtle: rgba(139, 92, 246, 0.12);
-  --wave-cursor-glow: rgba(139, 92, 246, 0.15);
+  --wave-purple-light: rgba(139, 109, 184, 0.2); /* Lavender: #8B6DB8 */
+  --wave-purple-medium: rgba(91, 44, 145, 0.25); /* Royal Purple: #5B2C91 */
+  --wave-purple-dark: rgba(61, 27, 92, 0.3); /* Deep Plum: #3D1B5C */
+  --wave-purple-subtle: rgba(91, 44, 145, 0.12); /* Royal Purple: #5B2C91 */
+  --wave-cursor-glow: rgba(91, 44, 145, 0.15); /* Royal Purple: #5B2C91 */
 }
 
 /* Ensure proper layering */
@@ -123,7 +123,7 @@
   width: 200px;
   height: 200px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(91, 44, 145, 0.15) 0%, transparent 70%); /* Royal Purple: #5B2C91 */
   pointer-events: none;
   transform: translate(calc(var(--x) - 100px), calc(var(--y) - 100px));
   transition: opacity 0.3s ease;

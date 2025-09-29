@@ -1,53 +1,51 @@
 "use client"
 
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
 
 export default function ContentSection() {
-  const taglineText = "Passionate and results-driven Full Stack Developer and Data Scientist"
-  const paragraphText = "Dedicated to crafting innovative and efficient digital solutions. With a strong foundation in both front-end and back-end technologies, coupled with a certification in Data Analysis, I bring a unique blend of technical expertise and analytical insight to every project."
+  const paragraphText = "Crafting technical solutions with precision engineering. Specializing in React, Next.js, Python, and data-driven applications that perform under pressure."
 
   // State for scroll-triggered animations
-  const [displayedTagline, setDisplayedTagline] = useState("")
   const [displayedParagraph, setDisplayedParagraph] = useState("")
   const [showCursor, setShowCursor] = useState(true)
   const [currentPhase, setCurrentPhase] = useState("waiting")
-  const [showButtons, setShowButtons] = useState(false)
-  const [showLogo, setShowLogo] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [hasAnimated, setHasAnimated] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
   const [animationComplete, setAnimationComplete] = useState(false)
 
   const sectionRef = useRef<HTMLElement>(null)
+  const animationTriggered = useRef(false)
 
   // Check session storage on mount to see if animation was already completed
   useEffect(() => {
     const wasCompleted = sessionStorage.getItem('content-section-animated')
     if (wasCompleted === 'true') {
       // Skip animation - show everything immediately
-      setDisplayedTagline(taglineText)
       setDisplayedParagraph(paragraphText)
-      setShowButtons(true)
-      setShowLogo(true)
       setCurrentPhase("complete")
       setHasAnimated(true)
       setAnimationComplete(true)
       setIsVisible(true)
+      animationTriggered.current = true
     }
   }, [])
 
   // Intersection Observer to trigger animations when section comes into view
   useEffect(() => {
+    // Don't create observer if animation was already completed or triggered
+    if (animationComplete || hasAnimated || animationTriggered.current) return
+
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries
         // Only trigger if we haven't animated yet AND we're not currently animating
-        if (entry.isIntersecting && !hasAnimated && !isAnimating && !animationComplete) {
+        if (entry.isIntersecting && !animationTriggered.current && !hasAnimated && !isAnimating && !animationComplete) {
+          animationTriggered.current = true
           setIsVisible(true)
           startContentAnimation()
+          // Immediately disconnect the observer to prevent retriggering
+          observer.disconnect()
         }
       },
       {
@@ -61,11 +59,9 @@ export default function ContentSection() {
     }
 
     return () => {
-      if (sectionRef.current) {
-        observer.unobserve(sectionRef.current)
-      }
+      observer.disconnect()
     }
-  }, [hasAnimated, isAnimating, animationComplete])
+  }, []) // Remove dependencies to prevent recreation
 
   // Cursor blinking effect
   useEffect(() => {
@@ -104,28 +100,13 @@ export default function ContentSection() {
       // Delay before starting
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Type tagline and show logo simultaneously
-      setCurrentPhase("tagline")
-
-      // Start logo fade-in when tagline starts typing
-      setTimeout(() => {
-        setShowLogo(true)
-      }, 300) // Small delay so logo appears shortly after tagline starts
-
-      await typeText(taglineText, setDisplayedTagline, 25)
-      await new Promise(resolve => setTimeout(resolve, 600))
-
       // Type paragraph
       setCurrentPhase("paragraph")
       await typeText(paragraphText, setDisplayedParagraph, 20)
       await new Promise(resolve => setTimeout(resolve, 400))
 
-      // Show buttons
-      setCurrentPhase("buttons")
-      setShowButtons(true)
+      // Mark as complete
       setCurrentPhase("complete")
-
-      // Mark animation as fully complete
       setAnimationComplete(true)
 
       // Save to session storage so animation doesn't repeat
@@ -142,13 +123,10 @@ export default function ContentSection() {
 
   const getCursorPosition = () => {
     switch (currentPhase) {
-      case "tagline":
-        return "tagline"
       case "paragraph":
         return "paragraph"
-      case "buttons":
       case "complete":
-        return "paragraph"
+        return "none"
       default:
         return "none"
     }
@@ -157,66 +135,15 @@ export default function ContentSection() {
   return (
     <section
       ref={sectionRef}
-      className="container mx-auto px-4 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-16 min-h-screen"
+      className="container mx-auto px-4 py-16 md:py-24 flex flex-col justify-center items-center"
     >
-      <div className="md:w-1/2 text-center md:text-left">
-        <h2 className="text-xl md:text-2xl text-purple-400 font-medium mb-8">
-          {displayedTagline}
-          {getCursorPosition() === "tagline" && (
-            <span className={`inline-block w-1 h-6 md:h-7 bg-purple-400 ml-1 ${showCursor ? 'opacity-100' : 'opacity-0'}`} />
-          )}
-        </h2>
-        <p className="text-lg md:text-xl text-gray-300 mb-8">
+      <div className="w-full max-w-4xl mx-auto text-center">
+        <p className="text-lg leading-relaxed" style={{color: '#2A2A2A'}}>
           {displayedParagraph}
           {getCursorPosition() === "paragraph" && (
-            <span className={`inline-block w-1 h-5 md:h-6 bg-gray-300 ml-1 ${showCursor ? 'opacity-100' : 'opacity-0'}`} />
+            <span className={`inline-block w-1 h-5 md:h-6 ml-1 ${showCursor ? 'opacity-100' : 'opacity-0'}`} style={{backgroundColor: '#2A2A2A'}} />
           )}
         </p>
-        <div className={`flex flex-col sm:flex-row gap-4 justify-center md:justify-start transition-all duration-1000 ${
-          showButtons ? 'opacity-100 transform translate-y-0' : 'opacity-0 transform translate-y-4'
-        }`}>
-          <Link href="/projects">
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300"
-            >
-              View My Work
-            </Button>
-          </Link>
-          <Link href="/about">
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300"
-            >
-              Get to Know Me
-            </Button>
-          </Link>
-          <Link href="/contact">
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300"
-            >
-              Get in Touch
-            </Button>
-          </Link>
-        </div>
-      </div>
-      <div className="md:w-1/2 flex justify-center items-center">
-        <Image
-          src="/daniel-ashpes-logo.png"
-          alt="Daniel Ashpes Logo"
-          width={500}
-          height={500}
-          className={`rounded-lg shadow-lg transition-all duration-1000 ease-out ${
-            showLogo
-              ? 'opacity-100 transform translate-x-0 scale-100'
-              : 'opacity-0 transform translate-x-8 scale-95'
-          }`}
-          priority
-        />
       </div>
     </section>
   )

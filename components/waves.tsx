@@ -141,7 +141,7 @@ interface WavesProps {
 }
 
 const Waves: React.FC<WavesProps> = ({
-  lineColor = "rgba(139, 92, 246, 0.3)",
+  lineColor = "rgba(91, 44, 145, 0.3)", // Royal Purple: #5B2C91
   backgroundColor = "transparent",
   waveSpeedX = 0.01,
   waveSpeedY = 0.008,

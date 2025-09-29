@@ -40,7 +40,7 @@ export default function ClientLayout({
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-      <div className="relative min-h-screen bg-black text-white overflow-hidden">
+      <div className="relative min-h-screen bg-background text-foreground overflow-hidden">
         {/* Global waves background for all pages */}
         <GlobalWavesBackground />
 

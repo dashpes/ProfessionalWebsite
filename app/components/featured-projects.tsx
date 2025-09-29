@@ -130,23 +130,29 @@ export default function FeaturedProjects() {
   return (
     <section ref={sectionRef} className="container mx-auto px-4 py-16 md:py-24">
       <h2 className={`text-3xl md:text-5xl font-bold text-center mb-12 transition-all duration-1000 ${
-        titleVisible 
-          ? 'opacity-100 transform translate-y-0' 
+        titleVisible
+          ? 'opacity-100 transform translate-y-0'
           : 'opacity-0 transform translate-y-8'
-      }`}>
+      }`} style={{ color: '#5B2C91' }}>
         Featured Projects
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {projects.map((project, index) => (
-          <Card 
-            key={project.id} 
-            className={`bg-gray-900 border-gray-700 text-white flex flex-col transition-all duration-700 ease-out ${
+          <Card
+            key={project.id}
+            className={`border flex flex-col transition-all duration-700 ease-out ${
               visibleCards.includes(index)
                 ? 'opacity-100 transform translate-x-0 scale-100'
                 : 'opacity-0 transform -translate-x-12 scale-95'
             }`}
-            style={{ 
-              transitionDelay: visibleCards.includes(index) ? '0ms' : `${index * 150}ms` 
+            style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '20px',
+              boxShadow: '0 8px 32px rgba(91, 44, 145, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
+              transitionDelay: visibleCards.includes(index) ? '0ms' : `${index * 150}ms`
             }}
           >
             {project.image && (
@@ -160,20 +166,27 @@ export default function FeaturedProjects() {
             )}
             <CardHeader>
               <div className="flex items-start justify-between">
-                <CardTitle className="text-2xl">{project.title}</CardTitle>
+                <CardTitle className="text-2xl" style={{ color: '#2A2A2A' }}>{project.title}</CardTitle>
                 {project.manual && (
-                  <Badge variant="outline" className="border-blue-500 text-blue-400 text-xs">
+                  <Badge variant="outline" className="border-purple-600 text-purple-600 text-xs">
                     Manual
                   </Badge>
                 )}
               </div>
-              <CardDescription className="text-gray-400">{project.description}</CardDescription>
+              <CardDescription style={{ color: '#2A2A2A' }}>{project.description}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow flex flex-col justify-between">
               <div className="mb-4">
                 <div className="flex flex-wrap gap-2">
                   {project.technologies.map((tech: string, i: number) => (
-                    <span key={i} className="bg-purple-800 text-purple-100 px-2 py-1 rounded-full text-xs">
+                    <span
+                      key={i}
+                      className="px-2 py-1 rounded-full text-xs"
+                      style={{
+                        backgroundColor: '#5B2C91',
+                        color: '#F5F2E8'
+                      }}
+                    >
                       {tech}
                     </span>
                   ))}
