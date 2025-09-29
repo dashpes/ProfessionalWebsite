@@ -380,7 +380,6 @@ const Waves: React.FC<WavesProps> = ({
 
       transition.progress += (transition.target - transition.progress) * (0.1 + easeProgress * 0.05)
 
-      const isTransitioning = Math.abs(transition.progress - transition.target) > 0.01
       const currentProgress = transition.progress
 
       if (currentProgress > 0.99) {
@@ -530,7 +529,7 @@ const Waves: React.FC<WavesProps> = ({
         cancelAnimationFrame(frameIdRef.current)
       }
     }
-  }, [interactive]) // Add interactive to dependency array
+  }, [interactive, lineColor, particleMode, particleOpacity, particleSize, waveAmpX, waveAmpY]) // Add missing dependencies
 
   return (
     <div

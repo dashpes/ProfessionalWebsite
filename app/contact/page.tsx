@@ -67,7 +67,7 @@ export default function ContactPage() {
           className="text-lg leading-relaxed text-center mb-12 max-w-3xl mx-auto"
           style={{ color: '#2A2A2A' }}
         >
-          Have a question, a project idea, or just want to say hello? Feel free to reach out using the form below. I'll
+          Have a question, a project idea, or just want to say hello? Feel free to reach out using the form below. I&apos;ll
           get back to you as soon as possible!
         </p>
 

@@ -23,7 +23,7 @@ interface GitHubStats {
 export default function GitHubStats() {
   const [stats, setStats] = useState<GitHubStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error] = useState<string | null>(null)
   const [isVisible, setIsVisible] = useState(false)
   const [titleVisible, setTitleVisible] = useState(false)
   const [cardsVisible, setCardsVisible] = useState<number[]>([])

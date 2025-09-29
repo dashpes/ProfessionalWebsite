@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 
 export default function ContentSection() {
   const paragraphText = "Crafting technical solutions with precision engineering. Specializing in React, Next.js, Python, and data-driven applications that perform under pressure."
@@ -61,7 +61,7 @@ export default function ContentSection() {
     return () => {
       observer.disconnect()
     }
-  }, []) // Remove dependencies to prevent recreation
+  }, [animationComplete, hasAnimated, isAnimating, startContentAnimation]) // Add missing dependencies
 
   // Cursor blinking effect
   useEffect(() => {
@@ -89,7 +89,7 @@ export default function ContentSection() {
     })
   }
 
-  const startContentAnimation = async () => {
+  const startContentAnimation = useCallback(async () => {
     // Prevent multiple animations from running
     if (hasAnimated || isAnimating || animationComplete) return
 
@@ -119,7 +119,7 @@ export default function ContentSection() {
     } finally {
       setIsAnimating(false)
     }
-  }
+  }, [hasAnimated, isAnimating, animationComplete, paragraphText, setDisplayedParagraph, setCurrentPhase, setHasAnimated, setIsAnimating, setAnimationComplete])
 
   const getCursorPosition = () => {
     switch (currentPhase) {

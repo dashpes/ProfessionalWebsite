@@ -5,7 +5,6 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Code2, Database, GraduationCap, MapPin, Sparkles } from 'lucide-react'
 import Footer from "../components/footer"

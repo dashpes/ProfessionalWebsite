@@ -75,7 +75,6 @@ export default function FeaturedProjects() {
           console.log('🚀 FeaturedProjects: Fetched projects:', featuredProjects.length, 'projects')
           setProjects(featuredProjects)
         } else {
-          const errorText = await response.text()
           console.log('🚀 FeaturedProjects: API failed, using fallback projects. Status:', response.status)
           setProjects(fallbackProjects)
         }
