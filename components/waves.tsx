@@ -138,6 +138,9 @@ interface WavesProps {
   style?: CSSProperties
   className?: string
   interactive?: boolean // New prop to control mouse interaction
+  particleMode?: boolean // New prop to enable particle rendering
+  particleSize?: number // Size of particles when in particle mode
+  particleOpacity?: number // Opacity of particles
 }
 
 const Waves: React.FC<WavesProps> = ({
@@ -155,6 +158,9 @@ const Waves: React.FC<WavesProps> = ({
   style = {},
   className = "",
   interactive = true,
+  particleMode = false,
+  particleSize = 2,
+  particleOpacity = 0.7,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -197,6 +203,12 @@ const Waves: React.FC<WavesProps> = ({
     yGap,
   })
   const frameIdRef = useRef<number | null>(null)
+  const transitionRef = useRef({
+    progress: particleMode ? 1 : 0,
+    target: particleMode ? 1 : 0,
+    duration: 1000,
+    startTime: 0
+  })
 
   useEffect(() => {
     configRef.current = {
@@ -212,6 +224,13 @@ const Waves: React.FC<WavesProps> = ({
       yGap,
     }
   }, [lineColor, waveSpeedX, waveSpeedY, waveAmpX, waveAmpY, friction, tension, maxCursorMove, xGap, yGap])
+
+  // Handle transition when particleMode changes
+  useEffect(() => {
+    const transition = transitionRef.current
+    transition.target = particleMode ? 1 : 0
+    transition.startTime = performance.now()
+  }, [particleMode])
 
   console.log("🌊 Waves: Component rendered with props", { lineColor, interactive, waveAmpX, waveAmpY })
 
@@ -274,21 +293,56 @@ const Waves: React.FC<WavesProps> = ({
 
       lines.forEach((pts) => {
         pts.forEach((p) => {
-          const move = noise.perlin2((p.x + time * waveSpeedX) * 0.002, (p.y + time * waveSpeedY) * 0.0015) * 12
-          p.wave.x = Math.cos(move) * waveAmpX
-          p.wave.y = Math.sin(move) * waveAmpY
+          if (particleMode) {
+            // Particle-specific movement: more chaotic, independent motion
+            const move = noise.perlin2((p.x + time * waveSpeedX) * 0.003, (p.y + time * waveSpeedY) * 0.002) * 15
+            const move2 = noise.perlin2((p.x + time * waveSpeedX * 2.2) * 0.0008, (p.y + time * waveSpeedY * 1.8) * 0.0025) * 10
+            const move3 = noise.perlin2((p.x + time * waveSpeedX * 0.5) * 0.004, (p.y + time * waveSpeedY * 0.6) * 0.001) * 6
+            const drift = noise.perlin2((p.x + time * 0.002) * 0.001, (p.y + time * 0.0015) * 0.001) * 20
+
+            p.wave.x = Math.cos(move + move3) * waveAmpX + Math.sin(move2 + drift) * (waveAmpX * 0.5)
+            p.wave.y = Math.sin(move + move3) * waveAmpY + Math.cos(move2 + drift) * (waveAmpY * 0.6)
+          } else {
+            // Original wave movement
+            const move = noise.perlin2((p.x + time * waveSpeedX) * 0.002, (p.y + time * waveSpeedY) * 0.0015) * 12
+            const move2 = noise.perlin2((p.x + time * waveSpeedX * 1.5) * 0.001, (p.y + time * waveSpeedY * 1.3) * 0.002) * 8
+            const move3 = noise.perlin2((p.x + time * waveSpeedX * 0.7) * 0.003, (p.y + time * waveSpeedY * 0.9) * 0.0012) * 4
+            p.wave.x = Math.cos(move + move3) * waveAmpX + Math.sin(move2) * (waveAmpX * 0.3)
+            p.wave.y = Math.sin(move + move3) * waveAmpY + Math.cos(move2) * (waveAmpY * 0.4)
+          }
 
           // Only apply cursor interaction if interactive mode is enabled
           if (interactive) {
             const dx = p.x - mouse.sx,
               dy = p.y - mouse.sy
             const dist = Math.hypot(dx, dy)
-            const l = Math.max(175, mouse.vs)
-            if (dist < l) {
-              const s = 1 - dist / l
-              const f = Math.cos(dist * 0.001) * s
-              p.cursor.vx += Math.cos(mouse.a) * f * l * mouse.vs * 0.00065
-              p.cursor.vy += Math.sin(mouse.a) * f * l * mouse.vs * 0.00065
+
+            if (particleMode) {
+              // Enhanced particle interaction: stronger repulsion and attraction
+              const l = Math.max(200, mouse.vs * 2)
+              if (dist < l) {
+                const s = 1 - dist / l
+                const f = Math.cos(dist * 0.0008) * s
+
+                // Add some randomness to particle behavior
+                const randomFactor = 1 + (Math.sin(time * 0.01 + p.x * 0.01) * 0.3)
+
+                p.cursor.vx += Math.cos(mouse.a) * f * l * mouse.vs * 0.001 * randomFactor
+                p.cursor.vy += Math.sin(mouse.a) * f * l * mouse.vs * 0.001 * randomFactor
+
+                // Add perpendicular movement for more interesting particle behavior
+                p.cursor.vx += Math.sin(mouse.a) * f * s * 0.5
+                p.cursor.vy -= Math.cos(mouse.a) * f * s * 0.5
+              }
+            } else {
+              // Original wave interaction
+              const l = Math.max(175, mouse.vs)
+              if (dist < l) {
+                const s = 1 - dist / l
+                const f = Math.cos(dist * 0.001) * s
+                p.cursor.vx += Math.cos(mouse.a) * f * l * mouse.vs * 0.00065
+                p.cursor.vy += Math.sin(mouse.a) * f * l * mouse.vs * 0.00065
+              }
             }
           }
 
@@ -316,20 +370,91 @@ const Waves: React.FC<WavesProps> = ({
       if (!ctx) return
 
       ctx.clearRect(0, 0, width, height)
-      ctx.beginPath()
-      ctx.strokeStyle = configRef.current.lineColor
-      linesRef.current.forEach((points) => {
-        let p1 = moved(points[0], false)
-        ctx.moveTo(p1.x, p1.y)
-        points.forEach((p, idx) => {
-          const isLast = idx === points.length - 1
-          p1 = moved(p, !isLast)
-          const p2 = moved(points[idx + 1] || points[points.length - 1], !isLast)
-          ctx.lineTo(p1.x, p1.y)
-          if (isLast) ctx.moveTo(p2.x, p2.y)
+
+      // Update transition progress
+      const transition = transitionRef.current
+      const now = performance.now()
+      const elapsed = now - transition.startTime
+      const progress = Math.min(elapsed / transition.duration, 1)
+      const easeProgress = 1 - Math.pow(1 - progress, 3) // Ease-out cubic
+
+      transition.progress += (transition.target - transition.progress) * (0.1 + easeProgress * 0.05)
+
+      const isTransitioning = Math.abs(transition.progress - transition.target) > 0.01
+      const currentProgress = transition.progress
+
+      if (currentProgress > 0.99) {
+        // Pure particle mode
+        ctx.fillStyle = lineColor.replace('rgba(', 'rgba(').replace(/[\d.]+\)$/, `${particleOpacity})`)
+
+        linesRef.current.forEach((points) => {
+          points.forEach((p) => {
+            const pos = moved(p, true)
+            const speed = Math.hypot(p.cursor.vx, p.cursor.vy)
+            const sizeVariation = 1 + speed * 0.01
+            const currentSize = particleSize * sizeVariation
+
+            ctx.beginPath()
+            ctx.arc(pos.x, pos.y, currentSize, 0, Math.PI * 2)
+            ctx.fill()
+          })
         })
-      })
-      ctx.stroke()
+      } else if (currentProgress < 0.01) {
+        // Pure line mode
+        ctx.beginPath()
+        ctx.strokeStyle = configRef.current.lineColor
+        linesRef.current.forEach((points) => {
+          let p1 = moved(points[0], false)
+          ctx.moveTo(p1.x, p1.y)
+          points.forEach((p, idx) => {
+            const isLast = idx === points.length - 1
+            p1 = moved(p, !isLast)
+            const p2 = moved(points[idx + 1] || points[points.length - 1], !isLast)
+            ctx.lineTo(p1.x, p1.y)
+            if (isLast) ctx.moveTo(p2.x, p2.y)
+          })
+        })
+        ctx.stroke()
+      } else {
+        // Transition mode: blend lines and particles
+        const lineOpacity = 1 - currentProgress
+        const particleOpacity = currentProgress
+
+        // Draw fading lines
+        if (lineOpacity > 0) {
+          ctx.beginPath()
+          ctx.strokeStyle = lineColor.replace(/[\d.]+\)$/, `${lineOpacity * 0.3})`)
+          linesRef.current.forEach((points) => {
+            let p1 = moved(points[0], false)
+            ctx.moveTo(p1.x, p1.y)
+            points.forEach((p, idx) => {
+              const isLast = idx === points.length - 1
+              p1 = moved(p, !isLast)
+              const p2 = moved(points[idx + 1] || points[points.length - 1], !isLast)
+              ctx.lineTo(p1.x, p1.y)
+              if (isLast) ctx.moveTo(p2.x, p2.y)
+            })
+          })
+          ctx.stroke()
+        }
+
+        // Draw appearing particles
+        if (particleOpacity > 0) {
+          ctx.fillStyle = lineColor.replace(/[\d.]+\)$/, `${particleOpacity * 0.7})`)
+          linesRef.current.forEach((points) => {
+            points.forEach((p) => {
+              const pos = moved(p, true)
+              const speed = Math.hypot(p.cursor.vx, p.cursor.vy)
+              const sizeVariation = 1 + speed * 0.01
+              const currentSize = (particleSize * sizeVariation) * particleOpacity
+
+              ctx.beginPath()
+              ctx.arc(pos.x, pos.y, currentSize, 0, Math.PI * 2)
+              ctx.fill()
+            })
+          })
+        }
+      }
     }
 
     function tick(t: number) {

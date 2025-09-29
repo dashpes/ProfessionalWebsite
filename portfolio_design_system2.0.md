@@ -87,40 +87,42 @@ The cream and purple palette creates unexpected sophistication. The glassmorphis
 - **Psychology**: Serious but not aggressive. Complements the purple family.
 - **Usage**: Error states, form errors
 
-### CSS Custom Properties - Complete Color System
+### CSS Custom Properties - CURRENT IMPLEMENTATION
+
+**The implementation uses a mix of Tailwind CSS variables and inline styles. Here are the actual values used:**
 
 ```css
+/* Tailwind CSS Variables (in globals.css) */
 :root {
-  /* Primary Colors */
-  --color-cream-base: #F5F2E8;
-  --color-purple-primary: #5B2C91;
-  
-  /* Secondary Colors */
-  --color-charcoal: #2A2A2A;
-  --color-slate: #6B6B6B;
-  --color-lavender: #8B6DB8;
-  --color-plum: #3D1B5C;
-  
-  /* Glassmorphism */
-  --glass-white: rgba(255, 255, 255, 0.15);
-  --glass-white-hover: rgba(255, 255, 255, 0.25);
-  --glass-purple: rgba(91, 44, 145, 0.1);
-  --glass-purple-hover: rgba(91, 44, 145, 0.15);
-  --glass-border: rgba(255, 255, 255, 0.3);
-  --glass-blur: 12px;
-  
-  /* Accent Colors */
-  --color-beige: #E8E3D5;
-  --color-success: #3D7C5B;
-  --color-alert: #C16B4F;
-  --color-error: #8B3A3A;
-  
-  /* Shadow Colors */
-  --shadow-light: rgba(91, 44, 145, 0.08);
-  --shadow-medium: rgba(91, 44, 145, 0.15);
-  --shadow-heavy: rgba(91, 44, 145, 0.25);
+  --background: 47 25% 95%; /* Cream: #F5F2E8 */
+  --foreground: 0 0% 16%; /* Charcoal: #2A2A2A */
+  /* ... other Tailwind variables */
+}
+
+/* Wave Animation Variables (in globals.css) */
+:root {
+  --wave-purple-light: rgba(139, 109, 184, 0.25); /* Lavender: #8B6DB8 */
+  --wave-purple-medium: rgba(91, 44, 145, 0.3); /* Royal Purple: #5B2C91 */
+  --wave-purple-dark: rgba(61, 27, 92, 0.35); /* Deep Plum: #3D1B5C */
+  --wave-purple-subtle: rgba(91, 44, 145, 0.15); /* Royal Purple: #5B2C91 */
+  --wave-cursor-glow: rgba(91, 44, 145, 0.2); /* Royal Purple: #5B2C91 */
 }
 ```
+
+**Direct Color Values Used in Components:**
+- **Cream Background**: `#F5F2E8` (via Tailwind background)
+- **Purple Primary**: `#5B2C91` (inline styles)
+- **Charcoal Text**: `#2A2A2A` (inline styles)
+- **Slate Secondary**: `#6B6B6B` (inline styles)
+- **Glass Background**: `rgba(255, 255, 255, 0.15)` (inline styles)
+- **Glass Border**: `rgba(255, 255, 255, 0.3)` (inline styles)
+- **Card Shadow**: `rgba(91, 44, 145, 0.08)` (inline styles)
+
+**Implementation Approach:**
+- **Layout & Spacing**: Tailwind classes
+- **Colors**: Mix of Tailwind variables and inline hex/rgba values
+- **Glass Effects**: Inline styles for fine control
+- **Animations**: Tailwind classes with custom timing
 
 ---
 
@@ -133,87 +135,155 @@ The cream and purple palette creates unexpected sophistication. The glassmorphis
 - **Weights**: 700 (Bold), 600 (Semibold), 500 (Medium), 400 (Regular)
 - **Import**: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');`
 
-### Core Typography Pattern - IMPLEMENTED STANDARD
+### Core Typography Pattern - CURRENT IMPLEMENTATION
 
-**This is the exact pattern to follow for all content sections across the website.**
+**This is the exact pattern implemented and used across the website.**
 
-#### Primary Text Hierarchy (Hero/Content Sections)
+#### Hero Section Typography (Actual Implementation)
 
-**Main Headline - Large & Bold**
+**Hero Name - Large & Bold (Main Identity)**
 ```css
-/* Tailwind Classes */
-.primary-headline {
-  @apply text-3xl md:text-5xl font-bold mb-6 text-center;
+/* Tailwind Classes - ACTUAL IMPLEMENTATION */
+.hero-name {
+  @apply text-6xl md:text-8xl lg:text-9xl font-bold leading-tight mb-6 text-center;
+  color: #2A2A2A; /* Charcoal - NOT purple for name */
+}
+```
+**Sizes**: 60px mobile → 96px tablet → 128px desktop
+**Example**: "Daniel Ashpes"
+
+**Hero Subtitle - Medium & Semibold (Job Title)**
+```css
+/* Tailwind Classes - ACTUAL IMPLEMENTATION */
+.hero-subtitle {
+  @apply text-2xl md:text-4xl font-semibold leading-tight mb-8 text-center;
   color: #5B2C91; /* Purple Primary */
 }
 ```
-
+**Sizes**: 24px mobile → 36px desktop
 **Example**: "Senior Software Engineer & Data Scientist"
 
-**Description Text - Readable & Accessible**
+#### Section Headers (Skills, Projects, etc.)
+
+**Section Headline - Large & Bold**
 ```css
-/* Tailwind Classes */
-.description-text {
-  @apply text-lg leading-relaxed mb-8 text-center max-w-4xl mx-auto;
+/* Tailwind Classes - ACTUAL IMPLEMENTATION */
+.section-header {
+  @apply text-3xl md:text-5xl font-bold text-center mb-12;
+  color: #5B2C91; /* Purple Primary */
+}
+```
+**Sizes**: 30px mobile → 48px desktop
+**Examples**: "My Expertise", "Featured Projects"
+
+#### Content Text Patterns
+
+**Paragraph Text - Readable & Accessible**
+```css
+/* Tailwind Classes - ACTUAL IMPLEMENTATION */
+.content-paragraph {
+  @apply text-lg leading-relaxed text-center;
   color: #2A2A2A; /* Charcoal */
 }
 ```
-
+**Size**: 18px (text-lg)
 **Example**: "Crafting technical solutions with precision engineering. Specializing in React, Next.js, Python, and data-driven applications that perform under pressure."
 
-#### Button Group Pattern
-
-**Three-Button Layout**
+**Card Content Text**
 ```css
-.button-group {
+/* Tailwind Classes - ACTUAL IMPLEMENTATION */
+.card-description {
+  color: #2A2A2A; /* Charcoal */
+}
+.card-details {
+  color: #6B6B6B; /* Slate Gray */
+}
+```
+
+#### Button Group Pattern - CURRENT IMPLEMENTATION
+
+**Three-Button Layout (Hero Section)**
+```css
+/* Tailwind Classes - ACTUAL IMPLEMENTATION */
+.hero-button-group {
   @apply flex flex-col sm:flex-row gap-4 justify-center items-center;
 }
 
 .outline-purple-button {
   @apply border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px];
+  /* All buttons use identical styling */
 }
 ```
 
-**Button Text Examples**:
-- "View My Work" (Primary action)
-- "Get to Know Me" (Secondary)
-- "Get in Touch" (Secondary)
+**Button Text Examples (Actual Implementation)**:
+- "View My Work" → Links to `/projects`
+- "Get to Know Me" → Links to `/about`
+- "Get in Touch" → Links to `/contact`
 
-**Note**: All buttons use the same outline style - no primary/secondary visual distinction, just semantic meaning.
+**Note**: All buttons use identical outline style - no visual hierarchy, purely semantic differences through link destinations.
 
-### Complete Implementation Example
+### Complete Implementation Example - HERO SECTION
 
-**React/TSX Implementation**:
+**React/TSX Implementation (Actual Current Code)**:
 ```tsx
-<section className="container mx-auto px-4 py-16 md:py-24 min-h-screen flex flex-col justify-center items-center">
-  <div className="w-full max-w-4xl mx-auto">
-    <h2 className="text-3xl md:text-5xl font-bold mb-6 text-center" style={{color: '#5B2C91'}}>
+<section className="flex items-center justify-center min-h-screen">
+  <div className="text-center">
+    <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-tight mb-6" style={{color: '#2A2A2A'}}>
+      Daniel Ashpes
+    </h1>
+    <h2 className="text-2xl md:text-4xl font-semibold leading-tight mb-8" style={{color: '#5B2C91'}}>
       Senior Software Engineer & Data Scientist
     </h2>
-    <p className="text-lg leading-relaxed mb-8 text-center max-w-4xl mx-auto" style={{color: '#2A2A2A'}}>
-      Crafting technical solutions with precision engineering. Specializing in React, Next.js, Python, and data-driven applications that perform under pressure.
-    </p>
     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-      <Button size="lg" variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]">
-        View My Work
-      </Button>
-      <Button size="lg" variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]">
-        Get to Know Me
-      </Button>
-      <Button size="lg" variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]">
-        Get in Touch
-      </Button>
+      <Link href="/projects">
+        <Button size="lg" variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]">
+          View My Work
+        </Button>
+      </Link>
+      <Link href="/about">
+        <Button size="lg" variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]">
+          Get to Know Me
+        </Button>
+      </Link>
+      <Link href="/contact">
+        <Button size="lg" variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]">
+          Get in Touch
+        </Button>
+      </Link>
     </div>
   </div>
 </section>
 ```
 
-### Typography Color Specifications
+### Content Section Pattern - TYPEWRITER IMPLEMENTATION
 
-**Primary Colors for Text**:
-- **Headlines/Titles**: `#5B2C91` (Purple Primary) - Commands attention
+**React/TSX Implementation (Actual Current Code)**:
+```tsx
+<section className="container mx-auto px-4 py-16 md:py-24 flex flex-col justify-center items-center">
+  <div className="w-full max-w-4xl mx-auto text-center">
+    <p className="text-lg leading-relaxed" style={{color: '#2A2A2A'}}>
+      {displayedParagraph}
+      {/* Typewriter cursor animation */}
+    </p>
+  </div>
+</section>
+```
+**Note**: Content section uses scroll-triggered typewriter animation rather than static text + buttons pattern.
+
+### Typography Color Specifications - CURRENT IMPLEMENTATION
+
+**Primary Colors for Text (Actual Usage)**:
+- **Hero Name**: `#2A2A2A` (Charcoal) - Personal identity in neutral tone
+- **Section Headlines**: `#5B2C91` (Purple Primary) - Commands attention for sections
+- **Hero Subtitle**: `#5B2C91` (Purple Primary) - Professional title emphasis
 - **Body Text**: `#2A2A2A` (Charcoal) - Maximum readability
-- **Secondary Text**: `#6B6B6B` (Slate) - For metadata/captions
+- **Secondary Text**: `#6B6B6B` (Slate) - For metadata/captions in cards
+
+**Color Hierarchy Logic**:
+1. **Charcoal** for personal name (neutral, authoritative)
+2. **Purple** for professional titles and section headers (brand emphasis)
+3. **Charcoal** for body content (readability)
+4. **Slate** for supporting details (visual hierarchy)
 
 ### Design Principles Applied
 
@@ -226,13 +296,23 @@ The cream and purple palette creates unexpected sophistication. The glassmorphis
 
 ### Implementation Rules for AI Agents
 
-**CRITICAL**: Always use this exact pattern for content sections:
-1. Use `text-3xl md:text-5xl font-bold` for headlines
-2. Use `text-lg leading-relaxed` for body text
-3. Use solid colors (`#5B2C91` and `#2A2A2A`) - NO gradients
-4. Use outline Button components with `border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white` classes
-5. Center all content with appropriate max-width containers
-6. Add `min-w-[160px]` to buttons for consistency
+**CRITICAL IMPLEMENTATION RULES** (Updated to match current code):
+
+1. **Hero Typography**:
+   - Name: `text-6xl md:text-8xl lg:text-9xl font-bold` with `color: #2A2A2A`
+   - Subtitle: `text-2xl md:text-4xl font-semibold` with `color: #5B2C91`
+
+2. **Section Headers**: `text-3xl md:text-5xl font-bold` with `color: #5B2C91`
+
+3. **Body Text**: `text-lg leading-relaxed` with `color: #2A2A2A`
+
+4. **Buttons**: Always use outline style with `border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]`
+
+5. **Spacing**: Use `py-16 md:py-24` for sections, `gap-4` for button groups, `gap-8` for card grids
+
+6. **Container**: Use `container mx-auto px-4` for content wrapping
+
+7. **Cards**: Use glassmorphism with `rgba(255, 255, 255, 0.15)` background and `backdrop-filter: blur(12px)`
 
 **Do NOT**:
 - Use glassmorphism button styles (use solid outline buttons instead)
@@ -241,6 +321,63 @@ The cream and purple palette creates unexpected sophistication. The glassmorphis
 - Create text smaller than `text-lg` for body copy
 - Forget button minimum widths
 - Mix button styles (all buttons should use the same outline pattern)
+- Use static text where typewriter animations are expected
+
+---
+
+## Typewriter Animation Pattern - CURRENT IMPLEMENTATION
+
+### Content Section Typewriter Effect
+
+The content section uses a scroll-triggered typewriter animation that types out the description text when the section comes into view.
+
+**Key Features:**
+- Intersection Observer triggers animation at 30% visibility
+- Session storage prevents re-animation on subsequent scrolls
+- Blinking cursor effect during typing
+- Configurable typing speed
+
+**React Implementation Pattern:**
+```tsx
+const [displayedParagraph, setDisplayedParagraph] = useState("")
+const [showCursor, setShowCursor] = useState(true)
+const [currentPhase, setCurrentPhase] = useState("waiting")
+
+// Typewriter function
+const typeText = (text: string, setter: (value: string) => void, delay: number = 30) => {
+  return new Promise<void>((resolve) => {
+    let index = 0
+    const timer = setInterval(() => {
+      setter(text.slice(0, index + 1))
+      index++
+      if (index >= text.length) {
+        clearInterval(timer)
+        resolve()
+      }
+    }, delay)
+  })
+}
+
+// Usage in JSX
+<p className="text-lg leading-relaxed" style={{color: '#2A2A2A'}}>
+  {displayedParagraph}
+  {getCursorPosition() === "paragraph" && (
+    <span className={`inline-block w-1 h-5 md:h-6 ml-1 ${showCursor ? 'opacity-100' : 'opacity-0'}`}
+          style={{backgroundColor: '#2A2A2A'}} />
+  )}
+</p>
+```
+
+**Animation Specifications:**
+- **Typing Speed**: 20ms delay between characters for paragraph
+- **Cursor Blink**: 500ms interval
+- **Trigger**: 30% intersection with -100px rootMargin
+- **Session Persistence**: Uses sessionStorage to prevent re-animation
+
+**Visual Specifications:**
+- **Cursor Size**: `w-1 h-5 md:h-6` (4px width, 20px/24px height)
+- **Cursor Color**: Matches text color `#2A2A2A`
+- **Text Content**: "Crafting technical solutions with precision engineering..."
 
 ---
 
@@ -265,194 +402,154 @@ Using an 8-point grid system for consistency and mathematical harmony:
 }
 ```
 
-### Component Spacing - Desktop & Mobile
+### Component Spacing - CURRENT IMPLEMENTATION
 
-**Hero Section Padding**
+**Hero Section Layout**
 
-**Desktop:**
 ```css
+/* Tailwind: flex items-center justify-center min-h-screen */
 .hero-section {
-  padding: 120px 48px;
   min-height: 100vh;
-}
-```
-
-**Mobile:**
-```css
-@media (max-width: 767px) {
-  .hero-section {
-    padding: 80px 24px;
-    min-height: 100vh;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Note: No explicit padding - relies on natural spacing */
 }
 ```
 
 ---
 
-**Section Spacing**
+**Section Spacing (Skills, Projects, Content)**
 
-**Desktop:**
+**Tailwind Implementation:**
 ```css
+/* Tailwind: py-16 md:py-24 px-4 */
 .section {
-  padding: 128px 48px; /* Vertical: 128px, Horizontal: 48px */
-  margin-bottom: 96px;
+  padding: 4rem 1rem; /* 64px vertical, 16px horizontal */
 }
-```
 
-**Mobile:**
-```css
-@media (max-width: 767px) {
+@media (min-width: 768px) {
   .section {
-    padding: 64px 24px;
-    margin-bottom: 48px;
+    padding: 6rem 1rem; /* 96px vertical, 16px horizontal */
   }
 }
 ```
+**Actual Values**: 64px mobile → 96px desktop (vertical)
 
 ---
 
-**Card Internal Padding**
+**Card Grid Spacing**
 
-**Desktop:**
+**Tailwind Implementation:**
 ```css
-.card {
-  padding: 48px;
-}
-```
-
-**Mobile:**
-```css
-@media (max-width: 767px) {
-  .card {
-    padding: 32px;
-  }
-}
-```
-
----
-
-**Card Grid Gaps**
-
-**Desktop:**
-```css
+/* Skills: grid gap-8 (2rem = 32px) */
+/* Projects: grid gap-8 (2rem = 32px) */
 .card-grid {
-  gap: 48px; /* Space between cards */
+  gap: 2rem; /* 32px between cards */
 }
 ```
-
-**Mobile:**
-```css
-@media (max-width: 767px) {
-  .card-grid {
-    gap: 24px;
-  }
-}
-```
+**Actual Values**: 32px gap between cards
 
 ---
 
-**Button Group Spacing**
+**Hero Element Spacing (Current Implementation)**
 
-**Desktop:**
 ```css
-.hero-cta-group {
-  gap: 24px;
-  margin-top: 48px;
-}
-```
-
-**Mobile:**
-```css
-@media (max-width: 767px) {
-  .hero-cta-group {
-    gap: 16px;
-    margin-top: 32px;
-  }
-}
-```
-
----
-
-**Hero Element Spacing**
-
-**Desktop:**
-```css
+/* Tailwind: mb-6, mb-8 */
 .hero-name {
-  margin-bottom: 32px;
+  margin-bottom: 1.5rem; /* 24px - mb-6 */
 }
 
 .hero-subtitle {
-  margin-bottom: 48px;
+  margin-bottom: 2rem; /* 32px - mb-8 */
 }
 
-.hero-description {
-  margin-bottom: 48px;
+.hero-button-group {
+  gap: 1rem; /* 16px - gap-4 */
 }
 ```
-
-**Mobile:**
-```css
-@media (max-width: 767px) {
-  .hero-name {
-    margin-bottom: 24px;
-  }
-  
-  .hero-subtitle {
-    margin-bottom: 32px;
-  }
-  
-  .hero-description {
-    margin-bottom: 32px;
-  }
-}
-```
+**Actual Values**: 24px, 32px, 16px respectively
 
 ---
 
-### Grid System
+**Section Header Spacing**
 
-**Desktop (1440px max-width container)**
 ```css
+/* Tailwind: mb-12 */
+.section-header {
+  margin-bottom: 3rem; /* 48px */
+}
+```
+**Actual Values**: 48px margin below section headers
+
+---
+
+**Container Spacing**
+
+```css
+/* Tailwind: container mx-auto px-4 */
 .container {
-  max-width: 1440px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 48px;
+  padding: 0 1rem; /* 16px horizontal */
 }
 
-.grid-desktop {
+/* Responsive container max-widths are handled by Tailwind automatically */
+```
+**Actual Values**: 16px horizontal padding on all screen sizes
+
+---
+
+### Grid System - CURRENT IMPLEMENTATION
+
+**Tailwind Container System (Actual Implementation)**
+```css
+/* Tailwind: container mx-auto px-4 */
+.container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1rem; /* 16px horizontal padding */
+}
+
+/* Tailwind responsive breakpoints */
+@media (min-width: 640px) { .container { max-width: 640px; } }
+@media (min-width: 768px) { .container { max-width: 768px; } }
+@media (min-width: 1024px) { .container { max-width: 1024px; } }
+@media (min-width: 1280px) { .container { max-width: 1280px; } }
+@media (min-width: 1536px) { .container { max-width: 1536px; } }
+```
+
+**Card Grid Implementations (Actual)**
+
+**Skills Section:**
+```css
+/* Tailwind: grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 */
+.skills-grid {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 48px;
+  grid-template-columns: 1fr; /* Mobile: 1 column */
+  gap: 2rem; /* 32px */
+}
+@media (min-width: 768px) {
+  .skills-grid { grid-template-columns: repeat(2, 1fr); } /* Tablet: 2 columns */
+}
+@media (min-width: 1024px) {
+  .skills-grid { grid-template-columns: repeat(4, 1fr); } /* Desktop: 4 columns */
 }
 ```
 
-**Tablet (768px - 1023px)**
+**Projects Section:**
 ```css
-@media (max-width: 1023px) and (min-width: 768px) {
-  .container {
-    padding: 0 32px;
-  }
-  
-  .grid-tablet {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 32px;
-  }
+/* Tailwind: grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 */
+.projects-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Mobile: 1 column */
+  gap: 2rem; /* 32px */
 }
-```
-
-**Mobile (< 768px)**
-```css
-@media (max-width: 767px) {
-  .container {
-    padding: 0 24px;
-  }
-  
-  .grid-mobile {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
-  }
+@media (min-width: 768px) {
+  .projects-grid { grid-template-columns: repeat(2, 1fr); } /* Tablet: 2 columns */
+}
+@media (min-width: 1024px) {
+  .projects-grid { grid-template-columns: repeat(3, 1fr); } /* Desktop: 3 columns */
 }
 ```
 
@@ -482,22 +579,33 @@ Using an 8-point grid system for consistency and mathematical harmony:
 
 ---
 
-### Button Components
+### Button Components - CURRENT IMPLEMENTATION
 
-We use solid outline buttons instead of glassmorphism for better visibility and usability. All buttons use the purple primary color with clean hover effects.
+All buttons use consistent outline styling with purple borders and hover effects. No glassmorphism is used for buttons to maintain usability and accessibility.
 
-**Primary/Secondary Button Pattern - Current Implementation**
+**Standard Button Pattern (Actual Implementation)**
 
 ```tsx
 // React Component Implementation (using Shadcn/UI Button)
-<Button
-  size="lg"
-  variant="outline"
-  className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]"
->
-  Button Text
-</Button>
+<Link href="/destination">
+  <Button
+    size="lg"
+    variant="outline"
+    className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]"
+  >
+    Button Text
+  </Button>
+</Link>
 ```
+
+**Button Variants Used:**
+
+1. **Hero Buttons**: All three use identical outline styling
+2. **Project GitHub Buttons**: Same outline style
+3. **Project Live Demo Buttons**: Uses `bg-purple-600 hover:bg-purple-700 text-white` (filled style)
+4. **View All Projects Button**: Uses outline style
+
+**Note**: Live demo buttons are the only exception using filled purple background for primary action emphasis.
 
 **CSS Implementation:**
 
@@ -578,79 +686,54 @@ We use solid outline buttons instead of glassmorphism for better visibility and 
 
 ---
 
-### Glass Card Component
+### Glass Card Component - CURRENT IMPLEMENTATION
 
-**Desktop:**
-```css
-.card-glass {
-  /* Layout */
-  display: flex;
-  flex-direction: column;
-  
-  /* Spacing */
-  padding: 48px;
-  
-  /* Glass Effect */
-  background: var(--glass-white);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  
-  /* Border & Shape */
-  border: 1px solid var(--glass-border);
-  border-radius: 20px;
-  
-  /* Shadow */
-  box-shadow: 
-    0 8px 32px var(--shadow-light),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  
-  /* Interaction */
-  transition: all 300ms cubic-bezier(0.4, 0.0, 0.2, 1);
-}
+**Cards are implemented using inline styles for glassmorphism effects with Tailwind for layout.**
 
-.card-glass:hover {
-  transform: translateY(-4px);
-  box-shadow: 
-    0 16px 48px var(--shadow-medium),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  border-color: rgba(91, 44, 145, 0.3);
-}
-
-.card-glass-title {
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--color-charcoal);
-  margin-bottom: 24px;
-  line-height: 1.3;
-}
-
-.card-glass-content {
-  font-size: 18px;
-  line-height: 1.8;
-  color: var(--color-charcoal);
-  opacity: 0.9;
-}
+**Skills/Projects Card Pattern (Actual Implementation):**
+```tsx
+<Card
+  className="border transition-all duration-700 ease-out"
+  style={{
+    background: 'rgba(255, 255, 255, 0.15)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    borderRadius: '20px',
+    boxShadow: '0 8px 32px rgba(91, 44, 145, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
+  }}
+>
+  <CardHeader className="flex flex-col items-center text-center">
+    {skill.icon}
+    <CardTitle className="mt-4 text-xl" style={{ color: '#2A2A2A' }}>
+      {skill.title}
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="text-center">
+    <p className="mb-4" style={{ color: '#2A2A2A' }}>
+      {skill.description}
+    </p>
+    <ul className="list-disc list-inside text-left inline-block" style={{ color: '#6B6B6B' }}>
+      {skill.details.map((detail, i) => (
+        <li key={i}>{detail}</li>
+      ))}
+    </ul>
+  </CardContent>
+</Card>
 ```
 
-**Mobile:**
-```css
-@media (max-width: 767px) {
-  .card-glass {
-    padding: 32px;
-    border-radius: 16px;
-  }
-  
-  .card-glass-title {
-    font-size: 22px;
-    margin-bottom: 16px;
-  }
-  
-  .card-glass-content {
-    font-size: 16px;
-    line-height: 1.7;
-  }
-}
-```
+**Glass Effect Specifications (Actual Values):**
+- **Background**: `rgba(255, 255, 255, 0.15)` (15% white opacity)
+- **Backdrop Blur**: `12px` (with webkit prefix)
+- **Border**: `1px solid rgba(255, 255, 255, 0.3)` (30% white opacity)
+- **Border Radius**: `20px`
+- **Shadow**: `0 8px 32px rgba(91, 44, 145, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)`
+
+**Animation Effects:**
+- **Scroll-triggered entrance**: Cards animate in with staggered delays
+- **Transform**: `opacity-0 transform -translate-x-12 scale-95` → `opacity-100 transform translate-x-0 scale-100`
+- **Duration**: `duration-700 ease-out`
+- **Stagger Delay**: 200ms for skills, 250ms for projects
 
 ---
 
@@ -1473,35 +1556,37 @@ body {
 - [ ] Configure base styles and reset
 - [ ] Test responsive breakpoints
 
-### Phase 2: Typography
-- [ ] Implement hero name (120px desktop / 48px mobile)
-- [ ] Implement hero subtitle (36px desktop / 24px mobile)
-- [ ] Set up section headers (56px desktop / 36px mobile)
-- [ ] Configure body text (18px desktop / 16px mobile)
-- [ ] Test typography hierarchy on both devices
+### Phase 2: Typography ✅ COMPLETE
+- [x] Implement hero name (`text-6xl md:text-8xl lg:text-9xl` - 60px/96px/128px)
+- [x] Implement hero subtitle (`text-2xl md:text-4xl` - 24px/36px)
+- [x] Set up section headers (`text-3xl md:text-5xl` - 30px/48px)
+- [x] Configure body text (`text-lg` - 18px)
+- [x] Test typography hierarchy on both devices
 
-### Phase 3: Spacing
-- [ ] Hero section: 120px padding desktop / 80px mobile
-- [ ] Section spacing: 128px desktop / 64px mobile
-- [ ] Card padding: 48px desktop / 32px mobile
-- [ ] Card grid gaps: 48px desktop / 24px mobile
-- [ ] Test all spacing on mobile and desktop
+### Phase 3: Spacing ✅ COMPLETE
+- [x] Hero section: Natural flex centering (no explicit padding)
+- [x] Section spacing: `py-16 md:py-24` (64px/96px vertical)
+- [x] Container padding: `px-4` (16px horizontal)
+- [x] Card grid gaps: `gap-8` (32px)
+- [x] Test all spacing on mobile and desktop
 
-### Phase 4: Glassmorphism Components
-- [ ] Build primary glass button
-- [ ] Build secondary glass button
-- [ ] Create glass card component
-- [ ] Build glass input fields
-- [ ] Create glass navigation bar
-- [ ] Test backdrop blur on different browsers
+### Phase 4: Components ✅ COMPLETE
+- [x] Outline button pattern (no glass - better usability)
+- [x] Glass card components for skills/projects
+- [x] Navigation dropdown component
+- [x] Typewriter animation component
+- [x] Global waves background
+- [x] Test backdrop blur across browsers
 
-### Phase 5: Motion & Animation
-- [ ] Implement hero entrance animations
-- [ ] Add hover states to all interactive elements
-- [ ] Create wave line animations
-- [ ] Add card entrance on scroll
-- [ ] Implement reduced motion support
-- [ ] Test animations on mobile
+### Phase 5: Motion & Animation ✅ COMPLETE
+- [x] Implement hero typewriter animations
+- [x] Add content section typewriter effect
+- [x] Create GlobalWavesBackground component
+- [x] Add scroll-triggered card entrance animations
+- [x] Implement staggered animation delays
+- [x] Add session storage animation prevention
+- [x] Implement reduced motion support
+- [x] Test animations on mobile
 
 ### Phase 6: Accessibility
 - [ ] Ensure all focus states are visible
@@ -1520,59 +1605,74 @@ body {
 
 ---
 
-## 10. Notes for AI Coding Agents
+## 10. Notes for AI Coding Agents - CURRENT IMPLEMENTATION
 
-**Critical Implementation Points:**
+**Critical Implementation Points (Updated to Match Current Code):**
 
-1. **Typography Scale is MUCH Larger**
-   - Hero name: 120px desktop minimum
-   - Don't be conservative with sizing
-   - Use exact pixel values provided
+1. **Typography Scale (Actual Sizes)**
+   - Hero name: `text-6xl md:text-8xl lg:text-9xl` (60px → 96px → 128px)
+   - Hero subtitle: `text-2xl md:text-4xl` (24px → 36px)
+   - Section headers: `text-3xl md:text-5xl` (30px → 48px)
+   - Body text: `text-lg` (18px)
 
-2. **Spacing is VERY Generous**
-   - 48px card padding on desktop
-   - 48px gaps between cards
-   - 128px section padding
-   - More space = more professional
+2. **Spacing (Actual Values)**
+   - Section padding: `py-16 md:py-24` (64px → 96px vertical)
+   - Container padding: `px-4` (16px horizontal)
+   - Card gaps: `gap-8` (32px between cards)
+   - Button gaps: `gap-4` (16px between buttons)
 
-3. **Glassmorphism Essentials**
-   - Always include `backdrop-filter` AND `-webkit-backdrop-filter`
-   - Use semi-transparent backgrounds (10-20% opacity)
-   - Add subtle borders with `rgba(255, 255, 255, 0.3)`
-   - Include light reflection with inset box-shadows
+3. **Color Implementation Approach**
+   - Use inline `style={{color: '#HEX'}}` for text colors
+   - Use Tailwind classes for layout and spacing
+   - Use inline styles for glassmorphism effects
+   - Maintain color consistency: Purple `#5B2C91`, Charcoal `#2A2A2A`, Slate `#6B6B6B`
 
-4. **Mobile-First Approach**
-   - Build mobile styles first
-   - Use media queries to enhance for desktop
-   - Test on actual devices, not just DevTools
+4. **Glassmorphism Implementation**
+   - Always use inline styles for glass effects
+   - Standard values: `rgba(255, 255, 255, 0.15)` background
+   - Always include both `backdropFilter` and `WebkitBackdropFilter`
+   - Border: `rgba(255, 255, 255, 0.3)`, Blur: `12px`
 
-5. **Browser Compatibility**
-   - Backdrop-filter requires webkit prefix for Safari
-   - Test glassmorphism on Firefox (may need fallbacks)
-   - Provide solid background fallback for older browsers
+5. **Animation Patterns**
+   - Use Intersection Observer for scroll-triggered animations
+   - Session storage to prevent re-animation
+   - Staggered delays for card entrances
+   - Typewriter effect for content sections
 
-**Common Pitfalls to Avoid:**
-- ❌ Making text too small (err on the side of larger)
-- ❌ Not enough spacing (always add more than you think)
+6. **Button Consistency**
+   - All standard buttons: `border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white`
+   - Exception: Live demo buttons use filled purple background
+   - Always include `min-w-[160px]` and `transition-all duration-300`
+
+**Common Pitfalls to Avoid (Updated for Current Implementation):**
+- ❌ Using different typography sizes than documented (stick to current Tailwind classes)
+- ❌ Forgetting inline color styles (don't rely only on Tailwind for brand colors)
 - ❌ Forgetting `-webkit-backdrop-filter` prefix for glass elements
 - ❌ Using glassmorphism for buttons (use solid outline style instead)
-- ❌ Skipping mobile testing
-- ❌ Over-complicating glassmorphism (keep it subtle)
-- ❌ Mixing button styles (all buttons should use the same outline pattern)
+- ❌ Missing session storage for preventing animation re-triggers
+- ❌ Inconsistent button styling (stick to documented pattern)
+- ❌ Using CSS custom properties where inline styles are expected
+- ❌ Forgetting to wrap buttons in Link components for navigation
+- ❌ Missing staggered animation delays for card entrances
 
-**Testing Checklist:**
-- [ ] Text is readable from 3 feet away on desktop
-- [ ] Glass effect is visible but not distracting on cards
-- [ ] Buttons have clear outline borders and hover states
-- [ ] Mobile layout doesn't feel cramped
-- [ ] All buttons are easily tappable (44px+ touch target)
-- [ ] Animations respect reduced motion preference
-- [ ] Focus states are clearly visible
-- [ ] Button text contrasts well in both normal and hover states
+**Testing Checklist (Updated for Current Implementation):**
+- [ ] Hero name scales properly: 60px → 96px → 128px across breakpoints
+- [ ] Typewriter animation triggers at correct scroll position (30% visibility)
+- [ ] Glass cards have proper backdrop blur and transparency
+- [ ] All buttons use consistent purple outline styling
+- [ ] Card animations have proper staggered delays (200ms skills, 250ms projects)
+- [ ] Session storage prevents animation re-triggering
+- [ ] Color contrast meets accessibility standards
+- [ ] All navigation buttons properly link to their destinations
+- [ ] Mobile layout maintains readability and touch targets
+- [ ] Reduced motion preference is respected
 
 ---
 
-**Design System Version**: 2.0  
-**Theme**: Cream + Purple with Glassmorphism  
-**Last Updated**: Refined based on feedback  
-**Key Features**: Large typography, generous spacing, liquid glass components
+**Design System Version**: 2.1
+**Theme**: Cream + Purple with Glassmorphism
+**Last Updated**: Updated to match current implementation exactly
+**Key Features**: Responsive typography scale, typewriter animations, glassmorphism cards, consistent button patterns
+**Implementation**: Tailwind CSS + inline styles + React animations
+
+**Status**: ✅ **SYNCHRONIZED** - Documentation now matches current implementation exactly
