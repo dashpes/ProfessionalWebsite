@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { generateMetadata, SEO_CONSTANTS, PROFESSIONAL_KEYWORDS } from '@/lib/seo'
 import HeroSection from "./components/hero-section"
+import ContentSection from "./components/content-section"
 import SkillsSection from "./components/skills-section"
 import GitHubStats from "./components/github-stats"
 import FeaturedProjects from "./components/featured-projects"
@@ -15,9 +16,10 @@ export const metadata: Metadata = generateMetadata({
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white">
+    <div className="flex flex-col min-h-screen">
       <main className="flex-1">
         <HeroSection />
+        <ContentSection />
         <SkillsSection />
         <FeaturedProjects />
         <GitHubStats />

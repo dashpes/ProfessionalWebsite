@@ -52,7 +52,7 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="bg-black text-white min-h-screen flex flex-col">
+    <div className="text-white min-h-screen flex flex-col">
       <main className="flex-1 container mx-auto px-4 py-16 md:py-24">
         <h1 className="text-4xl md:text-6xl font-bold text-center mb-12">Contact Me</h1>
         <p className="text-lg text-gray-300 text-center mb-8 max-w-2xl mx-auto">

@@ -16,18 +16,72 @@ export default function FeaturedProjects() {
   const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
+    // Fallback projects for when database is unavailable
+    const fallbackProjects: Project[] = [
+      {
+        id: "1",
+        name: "Professional Portfolio Website",
+        description: "A modern, responsive portfolio website built with Next.js 15, featuring animated backgrounds, dark/light themes, and comprehensive project showcase.",
+        technologies: ["Next.js", "TypeScript", "Tailwind CSS", "Prisma", "PostgreSQL"],
+        githubUrl: "https://github.com/danielashpes/portfolio",
+        liveUrl: "https://danielashpes.com",
+        status: "ACTIVE" as const,
+        featured: true,
+        imageUrl: "/images/portfolio-preview.jpg",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: "Web Development",
+        priority: 1
+      },
+      {
+        id: "2",
+        name: "E-Commerce Analytics Dashboard",
+        description: "Full-stack analytics dashboard for e-commerce platforms with real-time data visualization, user behavior tracking, and performance metrics.",
+        technologies: ["React", "Node.js", "Express", "MongoDB", "Chart.js"],
+        githubUrl: "https://github.com/danielashpes/ecommerce-dashboard",
+        status: "ACTIVE" as const,
+        featured: true,
+        imageUrl: "/images/dashboard-preview.jpg",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: "Full Stack",
+        priority: 2
+      },
+      {
+        id: "3",
+        name: "AI-Powered Data Analysis Tool",
+        description: "Machine learning application for automated data analysis and pattern recognition, featuring predictive modeling and data visualization.",
+        technologies: ["Python", "TensorFlow", "Pandas", "Scikit-learn", "Flask"],
+        githubUrl: "https://github.com/danielashpes/ai-data-tool",
+        status: "ACTIVE" as const,
+        featured: true,
+        imageUrl: "/images/ai-tool-preview.jpg",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        category: "Data Science",
+        priority: 3
+      }
+    ]
+
     // Fetch projects from API endpoint
     const fetchProjects = async () => {
       try {
+        console.log('🚀 FeaturedProjects: Fetching projects from /api/projects/featured')
         const response = await fetch('/api/projects/featured')
+        console.log('🚀 FeaturedProjects: Response status:', response.status, response.statusText)
+
         if (response.ok) {
           const featuredProjects = await response.json()
+          console.log('🚀 FeaturedProjects: Fetched projects:', featuredProjects.length, 'projects')
           setProjects(featuredProjects)
         } else {
-          console.error('Failed to fetch featured projects')
+          const errorText = await response.text()
+          console.log('🚀 FeaturedProjects: API failed, using fallback projects. Status:', response.status)
+          setProjects(fallbackProjects)
         }
       } catch (error) {
-        console.error('Error fetching featured projects:', error)
+        console.log('🚀 FeaturedProjects: Error fetching projects, using fallback:', error)
+        setProjects(fallbackProjects)
       }
     }
     fetchProjects()

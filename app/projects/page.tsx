@@ -231,7 +231,7 @@ function ProjectsLoading() {
 
 export default function ProjectsPage() {
   return (
-    <div className="container mx-auto px-4 py-16 md:py-24 bg-black text-white">
+    <div className="container mx-auto px-4 py-16 md:py-24 text-white">
       {/* Header Section with GitHub Stats */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 mb-16 pb-12 border-b border-gray-800">
         {/* GitHub Stats - Top Left */}

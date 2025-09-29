@@ -242,7 +242,7 @@ export default function AboutPage() {
   }, [])
 
   return (
-    <div className="bg-black text-white min-h-screen relative overflow-hidden">
+    <div className="text-white min-h-screen relative overflow-hidden">
       {/* Floating background elements */}
       <div className="fixed inset-0 pointer-events-none">
         <div 

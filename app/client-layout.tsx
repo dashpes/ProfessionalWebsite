@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import NavigationDropdown from "./components/navigation-dropdown"
 import PasswordGate from "./components/password-gate"
 import { Toaster } from "@/components/ui/sonner"
+import GlobalWavesBackground from "@/components/global-waves-background"
 import { useState, useEffect } from "react"
 
 
@@ -39,9 +40,17 @@ export default function ClientLayout({
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-      <NavigationDropdown />
-      {children}
-      <Toaster />
+      <div className="relative min-h-screen bg-black text-white overflow-hidden">
+        {/* Global waves background for all pages */}
+        <GlobalWavesBackground />
+
+        {/* Content */}
+        <div className="relative z-10">
+          <NavigationDropdown />
+          {children}
+          <Toaster />
+        </div>
+      </div>
     </ThemeProvider>
   )
 }
