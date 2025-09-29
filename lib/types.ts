@@ -33,6 +33,10 @@ export interface Project {
   order?: number
   category?: string
   status?: 'active' | 'archived' | 'in-development'
+  stars?: number
+  forks?: number
+  language?: string
+  size?: number
 }
 
 export interface ProjectConfig {
