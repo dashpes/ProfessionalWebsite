@@ -50,3 +50,5 @@ jobs:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
           heroku_app_name: "danielashpes-portfolio"
           heroku_email: "daniel.ashpes@gmail.com"
+          usedocker: false
+          dontautocreate: true
