@@ -1,7 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
 import { generateMetadata, generatePersonSchema, generateWebsiteSchema, SEO_CONSTANTS, PROFESSIONAL_KEYWORDS } from "@/lib/seo"
 import "./globals.css"
 import ClientLayout from "./client-layout"
@@ -55,7 +54,6 @@ export default function RootLayout({
         <ClientLayout>
           {children}
         </ClientLayout>
-        <Analytics />
       </body>
     </html>
   )

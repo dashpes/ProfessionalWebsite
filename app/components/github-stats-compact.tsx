@@ -73,16 +73,26 @@ export default function GitHubStatsCompact() {
 
   if (isLoading) {
     return (
-      <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm">
+      <div
+        className="border transition-all duration-700 ease-out p-6 max-w-sm"
+        style={{
+          background: 'rgba(255, 255, 255, 0.15)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          borderRadius: '20px',
+          boxShadow: '0 8px 32px rgba(91, 44, 145, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
+        }}
+      >
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gray-700 rounded-full animate-pulse" />
-            <div className="w-24 h-5 bg-gray-700 rounded animate-pulse" />
+            <div className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: 'rgba(91, 44, 145, 0.3)' }} />
+            <div className="w-24 h-5 rounded animate-pulse" style={{ backgroundColor: 'rgba(91, 44, 145, 0.2)' }} />
           </div>
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-center justify-between">
-              <div className="w-16 h-4 bg-gray-700 rounded animate-pulse" />
-              <div className="w-8 h-6 bg-gray-700 rounded animate-pulse" />
+              <div className="w-16 h-4 rounded animate-pulse" style={{ backgroundColor: 'rgba(91, 44, 145, 0.2)' }} />
+              <div className="w-8 h-6 rounded animate-pulse" style={{ backgroundColor: 'rgba(91, 44, 145, 0.2)' }} />
             </div>
           ))}
         </div>
@@ -92,55 +102,73 @@ export default function GitHubStatsCompact() {
 
   if (error || !stats) {
     return (
-      <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm">
+      <div
+        className="border transition-all duration-700 ease-out p-6 max-w-sm"
+        style={{
+          background: 'rgba(255, 255, 255, 0.15)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          borderRadius: '20px',
+          boxShadow: '0 8px 32px rgba(91, 44, 145, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
+        }}
+      >
         <div className="flex items-center gap-2 mb-4">
           <div className="w-2 h-2 bg-red-500 rounded-full" />
-          <span className="text-sm font-medium text-white">GitHub Activity</span>
+          <span className="text-sm font-medium" style={{ color: '#2A2A2A' }}>GitHub Activity</span>
         </div>
-        <p className="text-gray-400 text-sm">{error || 'Stats unavailable'}</p>
+        <p className="text-sm" style={{ color: '#6B6B6B' }}>{error || 'Stats unavailable'}</p>
       </div>
     )
   }
 
   return (
-    <div 
+    <div
       ref={cardRef}
-      className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-sm hover:border-purple-500 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10"
+      className="border transition-all duration-700 ease-out p-6 max-w-sm hover:shadow-lg"
+      style={{
+        background: 'rgba(255, 255, 255, 0.15)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.3)',
+        borderRadius: '20px',
+        boxShadow: '0 8px 32px rgba(91, 44, 145, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
+      }}
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-        <span className="text-lg font-semibold text-white">Live Activity</span>
+        <span className="text-lg font-semibold" style={{ color: '#2A2A2A' }}>Live Activity</span>
       </div>
 
       {/* Stats Grid */}
       <div className="space-y-4">
         <div className="flex items-center justify-between group">
           <div className="flex items-center gap-2">
-            <Code className="w-4 h-4 text-purple-400" />
-            <span className="text-gray-300 text-sm">Repositories</span>
+            <Code className="w-4 h-4" style={{ color: '#5B2C91' }} />
+            <span className="text-sm" style={{ color: '#6B6B6B' }}>Repositories</span>
           </div>
-          <div className="text-xl font-bold text-purple-400 transform group-hover:scale-110 transition-transform">
+          <div className="text-xl font-bold transform group-hover:scale-110 transition-transform" style={{ color: '#5B2C91' }}>
             {animatedRepos}
           </div>
         </div>
 
         <div className="flex items-center justify-between group">
           <div className="flex items-center gap-2">
-            <Star className="w-4 h-4 text-yellow-400" />
-            <span className="text-gray-300 text-sm">Stars</span>
+            <Star className="w-4 h-4" style={{ color: '#8B6DB8' }} />
+            <span className="text-sm" style={{ color: '#6B6B6B' }}>Stars</span>
           </div>
-          <div className="text-xl font-bold text-yellow-400 transform group-hover:scale-110 transition-transform">
+          <div className="text-xl font-bold transform group-hover:scale-110 transition-transform" style={{ color: '#8B6DB8' }}>
             {animatedStars}
           </div>
         </div>
 
         <div className="flex items-center justify-between group">
           <div className="flex items-center gap-2">
-            <GitFork className="w-4 h-4 text-blue-400" />
-            <span className="text-gray-300 text-sm">Forks</span>
+            <GitFork className="w-4 h-4" style={{ color: '#3D1B5C' }} />
+            <span className="text-sm" style={{ color: '#6B6B6B' }}>Forks</span>
           </div>
-          <div className="text-xl font-bold text-blue-400 transform group-hover:scale-110 transition-transform">
+          <div className="text-xl font-bold transform group-hover:scale-110 transition-transform" style={{ color: '#3D1B5C' }}>
             {animatedForks}
           </div>
         </div>
@@ -148,19 +176,19 @@ export default function GitHubStatsCompact() {
         <div className="flex items-center justify-between group">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-gray-900" />
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#F5F2E8' }} />
             </div>
-            <span className="text-gray-300 text-sm">Commits</span>
+            <span className="text-sm" style={{ color: '#6B6B6B' }}>Commits</span>
           </div>
-          <div className="text-xl font-bold text-green-400 transform group-hover:scale-110 transition-transform">
+          <div className="text-xl font-bold transform group-hover:scale-110 transition-transform" style={{ color: '#3D7C5B' }}>
             {animatedCommits}
           </div>
         </div>
       </div>
 
       {/* Recent Activity */}
-      <div className="mt-6 pt-4 border-t border-gray-700">
-        <div className="flex items-center gap-2 text-xs text-gray-400">
+      <div className="mt-6 pt-4" style={{ borderTop: '1px solid rgba(107, 107, 107, 0.2)' }}>
+        <div className="flex items-center gap-2 text-xs" style={{ color: '#6B6B6B' }}>
           <Calendar className="w-3 h-3" />
           <span>Updated {stats.recentActivity}</span>
         </div>

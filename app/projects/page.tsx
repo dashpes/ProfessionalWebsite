@@ -147,24 +147,20 @@ export default function ProjectsPage() {
     <div className="container mx-auto px-4 py-16 md:py-24">
       {/* Header Section */}
       <div className="mb-16">
-        {/* Title and Live Activity Widget - Aligned to Top */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 mb-6">
-          <div className="flex-1">
-            <h1 className="text-3xl md:text-5xl font-bold" style={{ color: '#5B2C91' }}>
-              My Projects
-            </h1>
-          </div>
+        {/* Live Activity Widget and Content - Widget on Left, Text Content on Right */}
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
           <div className="lg:flex-shrink-0">
             <GitHubStatsCompact />
           </div>
-        </div>
-
-        {/* Description - Centered */}
-        <div className="text-center">
-          <p className="text-lg leading-relaxed max-w-3xl mx-auto" style={{ color: '#2A2A2A' }}>
-            A comprehensive showcase of my technical work, from full-stack web applications to data science projects.
-            Each project demonstrates different aspects of my expertise in modern development practices.
-          </p>
+          <div className="flex-1 text-center">
+            <h1 className="text-3xl md:text-5xl font-bold mb-6" style={{ color: '#5B2C91' }}>
+              My Projects
+            </h1>
+            <p className="text-lg leading-relaxed max-w-3xl mx-auto" style={{ color: '#2A2A2A' }}>
+              A comprehensive showcase of my technical work, from full-stack web applications to data science projects.
+              Each project demonstrates different aspects of my expertise in modern development practices.
+            </p>
+          </div>
         </div>
       </div>
 
