@@ -13,9 +13,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { Project, ProjectConfig } from '@/lib/types'
-import { Trash2, Edit, Plus, Save, LogOut } from 'lucide-react'
+import { Trash2, Edit, Plus, Save, LogOut, FileText, Eye, Calendar } from 'lucide-react'
 import { ImageUpload } from '../components/image-upload'
 import GitHubSync from '../components/github-sync'
+import { BlogPostForm } from '../components/blog-post-form'
+import { EditableProjectCard } from '../components/editable-project-card'
 
 
 export default function AdminDashboard() {
@@ -24,6 +26,15 @@ export default function AdminDashboard() {
   const [isSaving, setIsSaving] = useState(false)
   const [editingProject, setEditingProject] = useState<Partial<Project> | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  // Blog state
+  const [blogPosts, setBlogPosts] = useState<any[]>([])
+  const [blogLoading, setBlogLoading] = useState(false)
+  const [editingPost, setEditingPost] = useState<any>(null)
+  const [isPostDialogOpen, setIsPostDialogOpen] = useState(false)
+  const [blogPage, setBlogPage] = useState(1)
+  const [blogTotal, setBlogTotal] = useState(0)
+
   const router = useRouter()
 
   const fetchConfig = useCallback(async () => {
@@ -58,6 +69,7 @@ export default function AdminDashboard() {
 
     fetchConfig()
   }, [router, fetchConfig])
+
 
   const saveConfig = async () => {
     if (!config) return
@@ -135,7 +147,7 @@ export default function AdminDashboard() {
     if (!config) return
 
     const updatedConfig = { ...config }
-    
+
     if (isManual) {
       updatedConfig.manualProjects = updatedConfig.manualProjects.filter(p => p.id !== projectId)
     } else {
@@ -143,6 +155,93 @@ export default function AdminDashboard() {
     }
 
     setConfig(updatedConfig)
+  }
+
+  // Blog functions
+  const fetchBlogPosts = useCallback(async () => {
+    setBlogLoading(true)
+    try {
+      const token = localStorage.getItem('admin-token')
+      const response = await fetch(`/api/blog/posts?admin=true&page=${blogPage}&limit=10`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setBlogPosts(data.posts)
+        setBlogTotal(data.pagination.total)
+      } else {
+        toast.error('Failed to load blog posts')
+      }
+    } catch {
+      toast.error('Failed to load blog posts')
+    } finally {
+      setBlogLoading(false)
+    }
+  }, [blogPage])
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin-token')
+    if (token) {
+      fetchBlogPosts()
+    }
+  }, [fetchBlogPosts])
+
+  const saveBlogPost = async (postData: any) => {
+    const token = localStorage.getItem('admin-token')
+    const isUpdate = !!editingPost?.id
+
+    try {
+      const response = await fetch(
+        isUpdate ? `/api/blog/posts/${editingPost.id}` : '/api/blog/posts',
+        {
+          method: isUpdate ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(postData)
+        }
+      )
+
+      if (response.ok) {
+        toast.success(`Blog post ${isUpdate ? 'updated' : 'created'} successfully!`)
+        setIsPostDialogOpen(false)
+        setEditingPost(null)
+        fetchBlogPosts()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || `Failed to ${isUpdate ? 'update' : 'create'} blog post`)
+      }
+    } catch (error) {
+      toast.error(`Failed to ${isUpdate ? 'update' : 'create'} blog post`)
+    }
+  }
+
+  const deleteBlogPost = async (postId: string) => {
+    if (!confirm('Are you sure you want to delete this blog post?')) return
+
+    const token = localStorage.getItem('admin-token')
+    try {
+      const response = await fetch(`/api/blog/posts/${postId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        toast.success('Blog post deleted successfully!')
+        fetchBlogPosts()
+      } else {
+        toast.error('Failed to delete blog post')
+      }
+    } catch {
+      toast.error('Failed to delete blog post')
+    }
+  }
+
+  const openPostDialog = (post?: any) => {
+    setEditingPost(post || null)
+    setIsPostDialogOpen(true)
   }
 
   if (isLoading) {
@@ -182,6 +281,7 @@ export default function AdminDashboard() {
         <Tabs defaultValue="projects" className="space-y-6">
           <TabsList className="bg-gray-800">
             <TabsTrigger value="projects">Projects</TabsTrigger>
+            <TabsTrigger value="blog">Blog</TabsTrigger>
             <TabsTrigger value="github">GitHub Sync</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
@@ -201,29 +301,13 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="space-y-4">
                   {config.manualProjects.map((project) => (
-                    <div key={project.id} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{project.title}</h3>
-                          {project.featured && <Badge className="bg-purple-600">Featured</Badge>}
-                          <Badge variant="outline" className="border-blue-500 text-blue-400">Manual</Badge>
-                        </div>
-                        <p className="text-gray-400 text-sm mt-1">{project.description}</p>
-                        <div className="flex gap-2 mt-2">
-                          {project.technologies.map((tech, i) => (
-                            <span key={i} className="bg-gray-700 px-2 py-1 rounded text-xs">{tech}</span>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => openProjectDialog(project)} className="bg-blue-600 hover:bg-blue-700">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" onClick={() => deleteProject(project.id, true)} className="bg-red-600 hover:bg-red-700">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
+                    <EditableProjectCard
+                      key={project.id}
+                      project={project}
+                      isManual={true}
+                      onUpdate={fetchConfig}
+                      onDelete={deleteProject}
+                    />
                   ))}
                   {config.manualProjects.length === 0 && (
                     <p className="text-gray-400 text-center py-8">No manual projects added yet.</p>
@@ -232,44 +316,110 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            {/* GitHub Repo Overrides */}
+            {/* GitHub Projects */}
             <Card className="bg-gray-900 border-gray-700">
               <CardHeader>
-                <CardTitle>GitHub Repository Overrides</CardTitle>
+                <CardTitle>GitHub Projects</CardTitle>
+                <p className="text-sm text-gray-400 mt-1">
+                  Edit GitHub-synced projects to override their display information
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Object.entries(config.repoOverrides || {}).map(([repoName, override]) => (
-                    <div key={repoName} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{override.title || repoName}</h3>
-                          {override.featured && <Badge className="bg-purple-600">Featured</Badge>}
-                          <Badge variant="outline" className="border-green-500 text-green-400">GitHub</Badge>
-                        </div>
-                        <p className="text-gray-400 text-sm mt-1">{override.description}</p>
-                        {override.technologies && (
-                          <div className="flex gap-2 mt-2">
-                            {override.technologies.map((tech, i) => (
-                              <span key={i} className="bg-gray-700 px-2 py-1 rounded text-xs">{tech}</span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={() => openProjectDialog({ ...override, id: repoName })} className="bg-blue-600 hover:bg-blue-700">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" onClick={() => deleteProject(repoName, false)} className="bg-red-600 hover:bg-red-700">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  {Object.keys(config.repoOverrides || {}).length === 0 && (
-                    <p className="text-gray-400 text-center py-8">No GitHub repository overrides configured.</p>
+                  {config.githubProjects?.map((project) => (
+                    <EditableProjectCard
+                      key={project.id}
+                      project={project}
+                      isManual={false}
+                      onUpdate={fetchConfig}
+                      onDelete={deleteProject}
+                    />
+                  )) || (
+                    <p className="text-gray-400 text-center py-8">
+                      No GitHub projects synced yet. Go to the GitHub Sync tab to sync your repositories.
+                    </p>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="blog" className="space-y-6">
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Blog Posts</CardTitle>
+                  <Button onClick={() => openPostDialog()} className="bg-purple-600 hover:bg-purple-700">
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Post
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {blogLoading ? (
+                  <div className="text-center py-8">Loading blog posts...</div>
+                ) : (
+                  <div className="space-y-4">
+                    {blogPosts.map((post) => (
+                      <div key={post.id} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold">{post.title}</h3>
+                            {post.featured && <Badge className="bg-purple-600">Featured</Badge>}
+                            <Badge
+                              variant="outline"
+                              className={
+                                post.status === 'PUBLISHED' ? 'border-green-500 text-green-400' :
+                                post.status === 'DRAFT' ? 'border-yellow-500 text-yellow-400' :
+                                post.status === 'SCHEDULED' ? 'border-blue-500 text-blue-400' :
+                                'border-gray-500 text-gray-400'
+                              }
+                            >
+                              {post.status}
+                            </Badge>
+                            <div className="flex items-center gap-1 text-gray-400 text-sm">
+                              <Eye className="w-3 h-3" />
+                              {post.viewCount}
+                            </div>
+                            {post.readingTimeMinutes && (
+                              <span className="text-gray-400 text-sm">{post.readingTimeMinutes} min read</span>
+                            )}
+                          </div>
+                          <p className="text-gray-400 text-sm mb-2">{post.excerpt}</p>
+                          <div className="flex gap-2 mb-2">
+                            {post.categories?.map((cat: any) => (
+                              <span key={cat.category.id} className="bg-blue-700 px-2 py-1 rounded text-xs">
+                                {cat.category.name}
+                              </span>
+                            ))}
+                            {post.tags?.map((tag: any) => (
+                              <span key={tag.tag.id} className="bg-green-700 px-2 py-1 rounded text-xs">
+                                {tag.tag.name}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <span>Created: {new Date(post.createdAt).toLocaleDateString()}</span>
+                            {post.publishedAt && (
+                              <span>Published: {new Date(post.publishedAt).toLocaleDateString()}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => openPostDialog(post)} className="bg-blue-600 hover:bg-blue-700">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" onClick={() => deleteBlogPost(post.id)} className="bg-red-600 hover:bg-red-700">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    {blogPosts.length === 0 && (
+                      <p className="text-gray-400 text-center py-8">No blog posts yet. Create your first post!</p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -450,6 +600,23 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Blog Post Edit Dialog */}
+        <Dialog open={isPostDialogOpen} onOpenChange={setIsPostDialogOpen}>
+          <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-7xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingPost?.id ? 'Edit Blog Post' : 'Create New Blog Post'}
+              </DialogTitle>
+            </DialogHeader>
+            <BlogPostForm
+              post={editingPost}
+              onSave={saveBlogPost}
+              onCancel={() => setIsPostDialogOpen(false)}
+              loading={blogLoading}
+            />
           </DialogContent>
         </Dialog>
       </div>

@@ -5,94 +5,117 @@ import { PostBody } from "../../components/post-body"
 import { PostFooter } from "../../components/post-footer"
 import { Newsletter } from "../../components/newsletter"
 import Footer from "../../components/footer"
+import { db, trackBlogPostView } from '@/lib/database'
+import { notFound } from 'next/navigation'
+import { headers } from 'next/headers'
 
-// Placeholder data for a single blog post
-const DUMMY_POST_CONTENT = `
-# This is a Sample Blog Post Title
+async function getBlogPost(slug: string) {
+  try {
+    const post = await db.blogPost.findUnique({
+      where: {
+        slug,
+        status: 'PUBLISHED'
+      },
+      include: {
+        categories: {
+          include: {
+            category: true
+          }
+        },
+        tags: {
+          include: {
+            tag: true
+          }
+        }
+      }
+    })
 
-This is the **introduction** to my sample blog post. It's designed to give you an idea of how content will be displayed.
+    if (!post) {
+      return null
+    }
 
-## Section 1: The Power of Next.js
-
-Next.js is a powerful React framework that enables you to build highly performant and scalable web applications. It offers features like server-side rendering (SSR), static site generation (SSG), and API routes, making it incredibly versatile for various projects.
-
-\`\`\`javascript
-// Example of a simple Next.js API route
-export default function handler(req, res) {
-  res.status(200).json({ name: 'John Doe' });
-}
-\`\`\`
-
-### Sub-section: Static Site Generation
-
-Static Site Generation (SSG) is a build-time rendering approach where HTML is generated at build time and reused on each request. This is great for content-heavy sites like blogs, as it provides excellent performance and SEO benefits.
-
-## Section 2: Data Analysis with Python
-
-As a Data Analyst, I often use Python for data manipulation and analysis. Libraries like Pandas and NumPy are indispensable tools in my workflow.
-
-\`\`\`python
-import pandas as pd
-
-data = {'Name': ['Alice', 'Bob', 'Charlie'],
-        'Age': [25, 30, 35],
-        'City': ['New York', 'London', 'Paris']}
-df = pd.DataFrame(data)
-print(df)
-\`\`\`
-
-This table shows some sample data:
-
-| Header 1 | Header 2 | Header 3 |
-| -------- | -------- | -------- |
-| Row 1 Col 1 | Row 1 Col 2 | Row 1 Col 3 |
-| Row 2 Col 1 | Row 2 Col 2 | Row 2 Col 3 |
-
-## Conclusion
-
-I hope this sample post gives you a good overview of the content you can expect on my blog. Stay tuned for more insights into full-stack development, data analysis, and technology!
-`
-
-const DUMMY_POST_METADATA = {
-  title: "This is a Sample Blog Post Title",
-  coverImage: "/placeholder.png?height=630&width=1300",
-  date: "2023-04-05T05:35:07.322Z",
-  author: {
-    name: "Daniel Ashpes",
-    picture: "/placeholder-user.png",
-  },
-  content: DUMMY_POST_CONTENT,
-  slug: "sample-blog-post"
+    return {
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      excerpt: post.excerpt,
+      coverImage: post.coverImage || "/placeholder.png?height=630&width=1300",
+      date: post.publishedAt?.toISOString() || post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+      author: {
+        name: SEO_CONSTANTS.AUTHOR.name,
+        picture: "/placeholder-user.png",
+      },
+      slug: post.slug,
+      readingTime: post.readingTimeMinutes,
+      viewCount: post.viewCount,
+      featured: post.featured,
+      metaTitle: post.metaTitle,
+      metaDescription: post.metaDescription,
+      keywords: post.keywords,
+      categories: post.categories.map(c => ({
+        id: c.category.id,
+        name: c.category.name,
+        slug: c.category.slug
+      })),
+      tags: post.tags.map(t => ({
+        id: t.tag.id,
+        name: t.tag.name,
+        slug: t.tag.slug
+      }))
+    }
+  } catch (error) {
+    console.error('Failed to fetch blog post:', error)
+    return null
+  }
 }
 
 // Generate metadata for the blog post
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  // In a real app, you'd fetch the post data based on params.slug
-  const post = DUMMY_POST_METADATA
-  
+  const post = await getBlogPost(params.slug)
+
+  if (!post) {
+    return generateSEOMetadata({
+      title: 'Post Not Found',
+      description: 'The requested blog post could not be found.',
+      path: `/posts/${params.slug}`
+    })
+  }
+
   return generateSEOMetadata({
-    title: `${post.title} - ${SEO_CONSTANTS.AUTHOR.name} Blog`,
-    description: `${post.content.substring(0, 160)}...`,
+    title: `${post.metaTitle || post.title} - ${SEO_CONSTANTS.AUTHOR.name} Blog`,
+    description: post.metaDescription || post.excerpt || `${post.content.substring(0, 160)}...`,
     path: `/posts/${params.slug}`,
     image: post.coverImage,
-    type: 'article'
+    type: 'article',
+    keywords: post.keywords
   })
 }
 
-export default function PostPage({ params }: { params: { slug: string } }) {
-  const post = DUMMY_POST_METADATA // In a real app, you'd fetch this based on the slug
+export default async function PostPage({ params }: { params: { slug: string } }) {
+  const post = await getBlogPost(params.slug)
 
   if (!post) {
-    return <div>Post not found</div> // Or a proper 404 page
+    notFound()
+  }
+
+  // Track the view server-side
+  const headersList = headers()
+  try {
+    await trackBlogPostView(post.id, headersList)
+  } catch (error) {
+    // Fail silently for view tracking
+    console.error('Failed to track post view:', error)
   }
 
   const blogPostSchema = generateBlogPostSchema({
     title: post.title,
-    description: `${post.content.substring(0, 160)}...`,
+    description: post.metaDescription || post.excerpt || `${post.content.substring(0, 160)}...`,
     datePublished: post.date,
-    dateModified: post.date,
+    dateModified: post.updatedAt,
     url: `${SEO_CONSTANTS.SITE_URL}/posts/${params.slug}`,
-    image: post.coverImage
+    image: post.coverImage,
+    keywords: post.keywords
   })
 
   return (
@@ -104,9 +127,18 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         }}
       />
       <div className="container mx-auto px-5">
-        <PostHeader title={post.title} coverImage={post.coverImage} date={post.date} author={post.author} />
+        <PostHeader
+          title={post.title}
+          coverImage={post.coverImage}
+          date={post.date}
+          author={post.author}
+          readingTime={post.readingTime}
+          viewCount={post.viewCount}
+          categories={post.categories}
+          tags={post.tags}
+        />
         <PostBody content={post.content} />
-        <PostFooter />
+        <PostFooter slug={post.slug} title={post.title} />
       </div>
       <Newsletter />
       <Footer />

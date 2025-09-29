@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { generateMetadata, SEO_CONSTANTS, TECHNICAL_SKILLS } from '@/lib/seo'
+import { db } from '@/lib/database'
 
 export const metadata: Metadata = generateMetadata({
   title: `Blog - ${SEO_CONSTANTS.AUTHOR.name} | Software Engineering & Data Science Insights`,
@@ -11,54 +12,59 @@ import { Intro } from "../components/intro"
 import { HeroPost } from "../components/hero-post"
 import { MoreStories } from "../components/more-stories"
 import { Newsletter } from "../components/newsletter"
-import { Footer } from "../components/footer"
+import Footer from "../components/footer"
 
-// Placeholder data for blog posts
-const DUMMY_POSTS = [
-  {
-    slug: "getting-started-with-nextjs",
-    title: "Getting Started with Next.js",
-    coverImage: "/placeholder.png?height=630&width=1300",
-    date: "2023-04-05T05:35:07.322Z",
-    author: {
-      name: "Daniel Ashpes",
-      picture: "/placeholder-user.png",
-    },
-    excerpt: "A comprehensive guide to setting up your first Next.js project and understanding its core concepts.",
-  },
-  {
-    slug: "data-analysis-with-python",
-    title: "Unlocking Insights: Data Analysis with Python",
-    coverImage: "/placeholder.png?height=630&width=1300",
-    date: "2023-03-20T10:00:00.000Z",
-    author: {
-      name: "Daniel Ashpes",
-      picture: "/placeholder-user.png",
-    },
-    excerpt:
-      "Explore the power of Python libraries like Pandas and NumPy for effective data analysis and manipulation.",
-  },
-  {
-    slug: "building-restful-apis-node",
-    title: "Building Robust RESTful APIs with Node.js and Express",
-    coverImage: "/placeholder.png?height=630&width=1300",
-    date: "2023-02-15T14:30:00.000Z",
-    author: {
-      name: "Daniel Ashpes",
-      picture: "/placeholder-user.png",
-    },
-    excerpt:
-      "Learn how to design and implement efficient and secure RESTful APIs using Node.js and the Express framework.",
-  },
-]
+async function getBlogPosts() {
+  try {
+    const posts = await db.blogPost.findMany({
+      where: {
+        status: 'PUBLISHED'
+      },
+      include: {
+        categories: {
+          include: {
+            category: true
+          }
+        },
+        tags: {
+          include: {
+            tag: true
+          }
+        }
+      },
+      orderBy: [
+        { featured: 'desc' },
+        { publishedAt: 'desc' },
+        { createdAt: 'desc' }
+      ],
+      take: 10
+    })
 
-export default function BlogPage() {
-  const heroPost = DUMMY_POSTS[0]
-  const morePosts = DUMMY_POSTS.slice(1)
+    return posts.map(post => ({
+      slug: post.slug,
+      title: post.title,
+      coverImage: post.coverImage || "/placeholder.png?height=630&width=1300",
+      date: post.publishedAt?.toISOString() || post.createdAt.toISOString(),
+      author: {
+        name: SEO_CONSTANTS.AUTHOR.name,
+        picture: "/placeholder-user.png",
+      },
+      excerpt: post.excerpt || post.title.substring(0, 160)
+    }))
+  } catch (error) {
+    console.error('Failed to fetch blog posts:', error)
+    return []
+  }
+}
+
+export default async function BlogPage() {
+  const allPosts = await getBlogPosts()
+  const heroPost = allPosts[0] // Get the first post as hero
+  const morePosts = allPosts.slice(1) // Get the rest as more stories
 
   return (
-    <div className="bg-black text-white">
-      <div className="container mx-auto px-5">
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 py-16 md:py-24">
         <Intro />
         {heroPost && (
           <HeroPost
@@ -71,6 +77,12 @@ export default function BlogPage() {
           />
         )}
         {morePosts.length > 0 && <MoreStories posts={morePosts} />}
+        {allPosts.length === 0 && (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-bold text-gray-300 mb-4">No Blog Posts Yet</h2>
+            <p className="text-gray-400">Check back soon for new content!</p>
+          </div>
+        )}
       </div>
       <Newsletter />
       <Footer />

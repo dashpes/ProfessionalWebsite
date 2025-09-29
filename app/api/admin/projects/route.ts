@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminToken } from '@/lib/auth'
 import { db, logAdminActivity } from '@/lib/database'
-import { ProjectConfig } from '@/lib/types'
+import { ProjectConfig, Project } from '@/lib/types'
 
 // Get current project configuration
 export async function GET(request: NextRequest) {
@@ -10,16 +10,81 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Return a basic configuration to avoid database issues during initial setup
-    const config: ProjectConfig = {
+    // Fetch all projects from database
+    const projects = await db.project.findMany({
+      include: {
+        technologies: {
+          include: {
+            technology: true
+          }
+        }
+      },
+      orderBy: [
+        { displayOrder: 'asc' },
+        { featured: 'desc' },
+        { createdAt: 'desc' }
+      ]
+    })
+
+    // Separate manual and GitHub projects
+    const manualProjects = projects
+      .filter(p => p.source === 'MANUAL')
+      .map(p => ({
+        id: p.name,
+        title: p.title,
+        description: p.description || '',
+        technologies: p.technologies.map(t => t.technology.name),
+        featured: p.featured,
+        github: p.githubUrl,
+        live: p.liveUrl,
+        image: p.imageUrl,
+        order: p.displayOrder,
+        manual: true
+      }))
+
+    // Get all GitHub projects
+    const githubProjects = projects
+      .filter(p => p.source === 'GITHUB')
+      .map(p => ({
+        id: p.name,
+        title: p.titleOverride || p.title,
+        description: p.descriptionOverride || p.description || '',
+        technologies: p.technologies.map(t => t.technology.name),
+        featured: p.featured,
+        github: p.githubUrl,
+        live: p.liveUrl,
+        image: p.imageUrlOverride || p.imageUrl,
+        order: p.displayOrder,
+        manual: false,
+        hasOverrides: !!(p.titleOverride || p.descriptionOverride || p.imageUrlOverride || p.featured || p.displayOrder)
+      }))
+
+    // Build repo overrides from GitHub projects with overrides
+    const repoOverrides: Record<string, any> = {}
+    projects
+      .filter(p => p.source === 'GITHUB')
+      .filter(p => p.titleOverride || p.descriptionOverride || p.imageUrlOverride || p.featured || p.displayOrder)
+      .forEach(p => {
+        repoOverrides[p.name] = {
+          title: p.titleOverride || p.title,
+          description: p.descriptionOverride || p.description,
+          image: p.imageUrlOverride || p.imageUrl,
+          featured: p.featured,
+          order: p.displayOrder,
+          technologies: p.technologies.map(t => t.technology.name)
+        }
+      })
+
+    const config: ProjectConfig & { githubProjects?: any[] } = {
       githubUsername: 'danielashpes',
       excludeRepos: [],
       includeRepos: [],
-      manualProjects: [],
-      repoOverrides: {}
+      manualProjects,
+      repoOverrides,
+      githubProjects
     }
 
-    console.log('Admin projects API: returning basic config (database may not be populated yet)')
+    console.log('Admin projects API: fetched', manualProjects.length, 'manual projects,', githubProjects.length, 'GitHub projects, and', Object.keys(repoOverrides).length, 'repo overrides')
 
     return NextResponse.json(config)
   } catch (error) {

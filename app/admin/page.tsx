@@ -26,12 +26,19 @@ export default function AdminPage() {
       fetch('/api/admin/verify', {
         headers: { Authorization: `Bearer ${token}` }
       })
-        .then(res => res.ok ? setIsAuthenticated(true) : localStorage.removeItem('admin-token'))
+        .then(res => {
+          if (res.ok) {
+            setIsAuthenticated(true)
+            router.push('/admin/dashboard')
+          } else {
+            localStorage.removeItem('admin-token')
+          }
+        })
         .finally(() => setIsLoading(false))
     } else {
       setIsLoading(false)
     }
-  }, [])
+  }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -70,8 +77,11 @@ export default function AdminPage() {
   }
 
   if (isAuthenticated) {
-    router.push('/admin/dashboard')
-    return null
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Redirecting to dashboard...</div>
+      </div>
+    )
   }
 
   return (

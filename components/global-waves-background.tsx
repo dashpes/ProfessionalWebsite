@@ -13,7 +13,7 @@ export default function GlobalWavesBackground() {
   // Configuration for homepage (interactive) - Using Royal Purple from design system
   const homeConfig = {
     lineColor: "rgba(91, 44, 145, 0.3)", // Royal Purple: #5B2C91
-    backgroundColor: "transparent",
+    backgroundColor: "#F5F2E8", // Cream background
     waveAmpX: 30,
     waveAmpY: 20,
     waveSpeedX: 0.015,
@@ -30,7 +30,7 @@ export default function GlobalWavesBackground() {
   // Configuration for about page (particle mode) - Using Royal Purple from design system
   const aboutConfig = {
     lineColor: "rgba(91, 44, 145, 0.3)", // Royal Purple: #5B2C91, matches main page opacity
-    backgroundColor: "transparent",
+    backgroundColor: "#F5F2E8", // Cream background
     waveAmpX: 40,
     waveAmpY: 30,
     waveSpeedX: 0.008,
@@ -49,7 +49,7 @@ export default function GlobalWavesBackground() {
   // Configuration for other pages (subtle, non-interactive) - Using Royal Purple from design system
   const otherPagesConfig = {
     lineColor: "rgba(91, 44, 145, 0.2)", // Royal Purple: #5B2C91, subtle opacity
-    backgroundColor: "transparent",
+    backgroundColor: "#F5F2E8", // Cream background
     waveAmpX: 20,
     waveAmpY: 15,
     waveSpeedX: 0.012,

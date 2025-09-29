@@ -52,15 +52,23 @@ export default function GitHubSync() {
 
   const loadSyncStats = async () => {
     try {
+      const token = localStorage.getItem('admin-token')
+      if (!token) {
+        console.log('No admin token found, skipping sync stats load')
+        return
+      }
+
       const response = await fetch('/api/admin/github-sync', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+          'Authorization': `Bearer ${token}`
         }
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         setStats(data.data)
+      } else {
+        console.log('Failed to load sync stats, status:', response.status)
       }
     } catch (error) {
       console.error('Failed to load sync stats:', error)
@@ -70,13 +78,24 @@ export default function GitHubSync() {
   const handleSync = async () => {
     setIsLoading(true)
     setResult(null)
-    
+
     try {
+      const token = localStorage.getItem('admin-token')
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "No admin token found. Please log in again.",
+          variant: "destructive"
+        })
+        setIsLoading(false)
+        return
+      }
+
       const response = await fetch('/api/admin/github-sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('admin-token')}`
+          'Authorization': `Bearer ${token}`
         }
       })
 

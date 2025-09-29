@@ -13,10 +13,12 @@ function ProjectsGrid() {
   const projectRefs = useRef<(HTMLDivElement | null)[]>([])
 
   useEffect(() => {
-    // Fetch projects from API endpoint
+    // Fetch projects from API endpoint with cache busting
     const fetchProjects = async () => {
       try {
-        const response = await fetch('/api/projects')
+        const response = await fetch('/api/projects', {
+          cache: 'no-store' // Disable caching to always get fresh data
+        })
         if (response.ok) {
           const allProjects = await response.json()
           setProjects(allProjects)

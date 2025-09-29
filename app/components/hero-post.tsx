@@ -19,23 +19,30 @@ interface HeroPostProps {
 
 export function HeroPost({ title, coverImage, date, excerpt, author, slug }: HeroPostProps) {
   return (
-    <section className="mb-8 md:mb-16">
-      <div className="mb-8 md:mb-16">
-        <CoverImage title={title} src={coverImage} slug={slug} />
-      </div>
-      <div className="md:grid md:grid-cols-2 md:gap-x-16 lg:gap-x-8">
-        <div>
-          <h3 className="mb-4 text-4xl lg:text-6xl leading-tight">
-            <Link href={`/posts/${slug}`} className="hover:underline">
+    <section className="mb-12 md:mb-16">
+      <div
+        className="rounded-3xl overflow-hidden transition-all duration-700 ease-out mb-8"
+        style={{
+          background: 'rgba(255, 255, 255, 0.15)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: '0 8px 32px rgba(91, 44, 145, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
+        }}
+      >
+        <div className="overflow-hidden">
+          <CoverImage title={title} src={coverImage} slug={slug} className="rounded-none" />
+        </div>
+        <div className="p-6 md:p-8">
+          <h3 className="mb-4 text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
+            <Link href={`/posts/${slug}`} className="hover:text-purple-600 transition-colors" style={{color: '#2A2A2A'}}>
               {title}
             </Link>
           </h3>
-          <div className="mb-4 md:mb-0 text-lg">
+          <div className="mb-4 text-lg" style={{color: '#6B6B6B'}}>
             <DateFormatter dateString={date} />
           </div>
-        </div>
-        <div>
-          <p className="text-lg leading-relaxed mb-4">{excerpt}</p>
+          <p className="text-lg leading-relaxed mb-4" style={{color: '#2A2A2A'}}>{excerpt}</p>
           <Avatar src={author.picture} fallback={author.name} />
         </div>
       </div>

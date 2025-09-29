@@ -20,10 +20,14 @@ export function Newsletter() {
   }
 
   return (
-    <section className="py-12 bg-gray-900 text-white">
+    <section className="py-16 md:py-24" style={{background: 'rgba(91, 44, 145, 0.05)'}}>
       <div className="container mx-auto px-4 text-center">
-        <h2 className="text-3xl font-bold mb-4">Subscribe to My Newsletter</h2>
-        <p className="text-lg mb-8">Stay updated with my latest projects and insights.</p>
+        <h2 className="text-3xl md:text-5xl font-bold mb-6" style={{color: '#5B2C91'}}>
+          Subscribe to My Newsletter
+        </h2>
+        <p className="text-lg mb-8 max-w-2xl mx-auto" style={{color: '#2A2A2A'}}>
+          Stay updated with my latest blog posts, projects, and technical insights.
+        </p>
         <form onSubmit={handleSubmit} className="max-w-md mx-auto flex flex-col sm:flex-row gap-4">
           <Label htmlFor="email-newsletter" className="sr-only">
             Email
@@ -35,13 +39,23 @@ export function Newsletter() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="flex-1 bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+            className="flex-1 border-purple-600"
+            style={{
+              background: 'rgba(255, 255, 255, 0.25)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              borderRadius: '12px',
+              color: '#2A2A2A'
+            }}
           />
-          <Button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white">
+          <Button
+            type="submit"
+            className="bg-purple-600 hover:bg-purple-700 text-white transition-all duration-300 min-w-[160px]"
+          >
             Subscribe
           </Button>
         </form>
-        {message && <p className="mt-4 text-green-400">{message}</p>}
+        {message && <p className="mt-4" style={{color: '#3D7C5B'}}>{message}</p>}
       </div>
     </section>
   )

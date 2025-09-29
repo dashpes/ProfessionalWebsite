@@ -30,18 +30,18 @@ export async function GET() {
       ]
     })
 
-    // Transform to match expected format
+    // Transform to match expected format, using overrides when available
     const transformedProjects = projects.map(project => ({
       id: project.name, // Keep using name as ID for compatibility
-      title: project.title,
-      description: project.description || 'No description available',
+      title: project.titleOverride || project.title,
+      description: project.descriptionOverride || project.description || 'No description available',
       technologies: project.technologies.map(pt => pt.technology.name),
       github: project.githubUrl,
       live: project.liveUrl,
       featured: project.featured,
-      manual: false, // All database projects are from GitHub
+      manual: project.source === 'MANUAL',
       status: project.status.toLowerCase(),
-      image: project.imageUrl,
+      image: project.imageUrlOverride || project.imageUrl,
       category: project.category,
       order: project.displayOrder,
       stars: project.starsCount,
@@ -50,10 +50,10 @@ export async function GET() {
       size: project.repoSize
     }))
     
-    // Cache for longer since database is fast and we have real-time sync
+    // Shorter cache for better responsiveness to admin changes
     return NextResponse.json(transformedProjects, {
       headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=1800' // 1 hour cache
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30' // 1 minute cache
       }
     })
   } catch (error) {
