@@ -32,7 +32,7 @@ export async function GET() {
 
     // Transform to match expected format, using overrides when available
     const transformedProjects = projects.map(project => ({
-      id: project.name, // Keep using name as ID for compatibility
+      id: project.id, // Use database ID for analytics
       title: project.titleOverride || project.title,
       description: project.descriptionOverride || project.description || 'No description available',
       technologies: project.technologies.map(pt => pt.technology.name),

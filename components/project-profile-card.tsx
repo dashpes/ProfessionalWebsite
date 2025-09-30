@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -40,9 +40,124 @@ interface ProjectProfileCardProps {
 export default function ProjectProfileCard({ project }: ProjectProfileCardProps) {
   const [isLiked, setIsLiked] = useState(false)
   const [isWatching, setIsWatching] = useState(false)
+  const [stats, setStats] = useState({ viewCount: 0, likeCount: 0 })
+  const [hasTrackedView, setHasTrackedView] = useState(false)
+  const cardRef = useRef<HTMLDivElement>(null)
 
-  const handleLike = () => {
-    setIsLiked(!isLiked)
+  // Load like status from localStorage and server on mount
+  useEffect(() => {
+    const loadLikeStatus = async () => {
+      try {
+        // Check localStorage first for immediate UI feedback
+        const localLiked = localStorage.getItem(`project-liked-${project.id}`) === 'true'
+        setIsLiked(localLiked)
+
+        // Then verify with server
+        const response = await fetch(`/api/projects/${project.id}/like`)
+        if (response.ok) {
+          const data = await response.json()
+          setIsLiked(data.liked)
+          // Sync localStorage with server
+          localStorage.setItem(`project-liked-${project.id}`, String(data.liked))
+        }
+      } catch (error) {
+        console.error('Failed to load like status:', error)
+      }
+    }
+
+    loadLikeStatus()
+  }, [project.id])
+
+  // Load stats on mount
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const response = await fetch(`/api/projects/${project.id}/stats`)
+        if (response.ok) {
+          const data = await response.json()
+          setStats(data)
+        }
+      } catch (error) {
+        console.error('Failed to load project stats:', error)
+      }
+    }
+
+    loadStats()
+  }, [project.id])
+
+  // Track view when card becomes visible
+  useEffect(() => {
+    if (!cardRef.current || hasTrackedView) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasTrackedView) {
+          // Track view
+          fetch(`/api/projects/${project.id}/view`, {
+            method: 'POST',
+          }).then(() => {
+            setHasTrackedView(true)
+            // Update local stats
+            setStats(prev => ({ ...prev, viewCount: prev.viewCount + 1 }))
+          }).catch(error => {
+            console.error('Failed to track view:', error)
+          })
+        }
+      },
+      { threshold: 0.5 } // Track when 50% of card is visible
+    )
+
+    observer.observe(cardRef.current)
+
+    return () => observer.disconnect()
+  }, [project.id, hasTrackedView])
+
+  const handleLike = async () => {
+    const newLikedState = !isLiked
+
+    // Optimistic UI update
+    setIsLiked(newLikedState)
+    setStats(prev => ({
+      ...prev,
+      likeCount: newLikedState ? prev.likeCount + 1 : prev.likeCount - 1
+    }))
+    localStorage.setItem(`project-liked-${project.id}`, String(newLikedState))
+
+    try {
+      const response = await fetch(`/api/projects/${project.id}/like`, {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setIsLiked(data.liked)
+        localStorage.setItem(`project-liked-${project.id}`, String(data.liked))
+
+        // Refresh stats to ensure accuracy
+        const statsResponse = await fetch(`/api/projects/${project.id}/stats`)
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json()
+          setStats(statsData)
+        }
+      } else {
+        // Revert on error
+        setIsLiked(!newLikedState)
+        setStats(prev => ({
+          ...prev,
+          likeCount: !newLikedState ? prev.likeCount + 1 : prev.likeCount - 1
+        }))
+        localStorage.setItem(`project-liked-${project.id}`, String(!newLikedState))
+      }
+    } catch (error) {
+      console.error('Failed to toggle like:', error)
+      // Revert on error
+      setIsLiked(!newLikedState)
+      setStats(prev => ({
+        ...prev,
+        likeCount: !newLikedState ? prev.likeCount + 1 : prev.likeCount - 1
+      }))
+      localStorage.setItem(`project-liked-${project.id}`, String(!newLikedState))
+    }
   }
 
   const handleWatch = () => {
@@ -65,7 +180,7 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
   }
 
   return (
-    <div className="w-full max-w-[420px] mx-auto backdrop-blur-xl bg-white/90 border border-gray-200 rounded-2xl overflow-hidden transition-all duration-500 ease-out hover:scale-[1.01] hover:bg-white hover:border-gray-300 shadow-2xl">
+    <div ref={cardRef} className="w-full h-full flex flex-col max-w-[420px] mx-auto backdrop-blur-xl bg-white/90 border border-gray-200 rounded-2xl overflow-hidden transition-all duration-500 ease-out hover:scale-[1.01] hover:bg-white hover:border-gray-300 shadow-2xl">
       {/* Project Image */}
       {project.image && (
         <div className="relative h-48 overflow-hidden">
@@ -87,9 +202,9 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
       )}
 
       {/* Project Content */}
-      <div className="p-6 space-y-5">
+      <div className="p-6 space-y-5 flex-1 flex flex-col">
         {/* Project Name and Category */}
-        <div className="relative mb-3">
+        <div className="mb-3">
           <div className="flex items-start gap-4">
             {/* Project Icon/Avatar */}
             <div className="relative">
@@ -102,9 +217,17 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
             <div className="flex-1 space-y-2">
               <div className="space-y-1">
                 <h1 className="text-xl font-semibold text-gray-900 leading-tight">{project.title}</h1>
-                <p className="text-gray-600 text-sm font-medium">
-                  {project.language ? `${project.language} Project` : 'Project'}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-gray-600 text-sm font-medium">
+                    {project.language ? `${project.language} Project` : 'Project'}
+                  </p>
+                  {/* Category Badge inline */}
+                  {project.category && (
+                    <Badge className="bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-700 text-xs px-2 py-0.5 transition-all duration-300 font-medium">
+                      {project.category}
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               {project.github && (
@@ -121,26 +244,19 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
               )}
             </div>
           </div>
-
-          {/* Category Badge */}
-          <div className="absolute top-0 right-0">
-            {project.category && (
-              <Badge className="bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/30 text-purple-100 text-xs px-2 py-1 transition-all duration-300 font-medium">
-                {project.category}
-              </Badge>
-            )}
-          </div>
         </div>
 
         {/* Project Description */}
-        <p className="text-gray-700 text-sm leading-relaxed">{project.description}</p>
+        <div className="min-h-[60px]">
+          <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">{project.description}</p>
+        </div>
 
         {/* Technologies */}
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 min-h-[32px]">
           {project.technologies.slice(0, 4).map((tech, index) => (
             <Badge
               key={index}
-              className="bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 text-blue-100 text-xs px-2.5 py-1 transition-all duration-300 font-medium"
+              className="bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/30 text-blue-700 text-xs px-2.5 py-1 transition-all duration-300 font-medium"
             >
               {tech}
             </Badge>
@@ -175,7 +291,7 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
         </div>
 
         {/* Project Info */}
-        <div className="space-y-2.5 bg-gray-50 rounded-xl p-4 border border-gray-200">
+        <div className="space-y-2.5 bg-gray-50 rounded-xl p-4 border border-gray-200 flex-1">
           <div className="flex items-center gap-3 text-gray-700 text-sm">
             <Code className="h-4 w-4 text-blue-600 flex-shrink-0" />
             <span className="font-medium">{project.language || 'Multiple Languages'}</span>
@@ -206,7 +322,7 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2.5 pt-1">
+        <div className="flex gap-2.5 pt-1 mt-auto">
           {project.live && (
             <Button
               asChild
@@ -221,20 +337,24 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
 
           <Button
             onClick={handleWatch}
-            className={`bg-gray-100 hover:bg-gray-200 border border-gray-300 hover:border-gray-400 text-gray-700 transition-all duration-300 hover:scale-[1.02] shadow-md ${
+            className={`flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 hover:border-gray-400 text-gray-700 transition-all duration-300 hover:scale-[1.02] shadow-md ${
               isWatching ? "bg-blue-100 border-blue-300 text-blue-700" : ""
             }`}
+            title={`${formatNumber(stats.viewCount)} views`}
           >
             <Eye className={`h-4 w-4 transition-colors duration-300 ${isWatching ? "text-blue-600" : ""}`} />
+            <span className="text-xs font-medium">{formatNumber(stats.viewCount)}</span>
           </Button>
 
           <Button
             onClick={handleLike}
-            className={`bg-gray-100 hover:bg-gray-200 border border-gray-300 hover:border-gray-400 text-gray-700 transition-all duration-300 hover:scale-[1.02] shadow-md ${
+            className={`flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 hover:border-gray-400 text-gray-700 transition-all duration-300 hover:scale-[1.02] shadow-md ${
               isLiked ? "bg-red-100 border-red-300 text-red-700" : ""
             }`}
+            title={`${formatNumber(stats.likeCount)} likes`}
           >
             <Heart className={`h-4 w-4 transition-colors duration-300 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
+            <span className="text-xs font-medium">{formatNumber(stats.likeCount)}</span>
           </Button>
         </div>
       </div>

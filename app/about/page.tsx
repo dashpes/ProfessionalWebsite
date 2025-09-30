@@ -343,15 +343,27 @@ export default function AboutPage() {
         <AnimatedSection delay={200}>
           <section className="flex flex-col lg:flex-row items-center gap-12 mb-20">
             <div className="lg:w-1/3 flex justify-center">
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-                <Image
-                  src="/daniel-ashpes-logo.png"
-                  alt="Daniel Ashpes"
-                  width={300}
-                  height={300}
-                  className="relative rounded-full object-cover shadow-2xl transition-transform duration-300 group-hover:scale-105"
-                />
+              <div className="relative p-8" style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '2px solid rgba(130, 164, 145, 0.4)',
+                borderRadius: '20px',
+                boxShadow: '0 8px 32px rgba(130, 164, 145, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
+              }}>
+                <div style={{
+                  background: '#9FB8AA',
+                  padding: '1rem',
+                  borderRadius: '12px'
+                }}>
+                  <Image
+                    src="/daniel-ashpes-logo.png"
+                    alt="Daniel Ashpes"
+                    width={300}
+                    height={300}
+                    className="object-cover"
+                  />
+                </div>
               </div>
             </div>
             <div className="lg:w-2/3 text-center lg:text-left">

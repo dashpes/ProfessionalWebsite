@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { generateMetadata, generatePersonSchema, generateWebsiteSchema, SEO_CONSTANTS, PROFESSIONAL_KEYWORDS } from "@/lib/seo"
+import PlausibleProvider from "next-plausible"
 import "./globals.css"
 import ClientLayout from "./client-layout"
 
@@ -31,11 +32,11 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.svg" />
         <link rel="icon" type="image/svg+xml" sizes="192x192" href="/android-chrome-192x192.svg" />
         <link rel="icon" type="image/svg+xml" sizes="512x512" href="/android-chrome-512x512.svg" />
-        
+
         {/* Theme color for mobile browsers */}
         <meta name="theme-color" content="#8b5cf6" />
         <meta name="msapplication-TileColor" content="#8b5cf6" />
-        
+
         {/* Structured Data */}
         <script
           type="application/ld+json"
@@ -50,11 +51,13 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={inter.className}>
-        <ClientLayout>
-          {children}
-        </ClientLayout>
-      </body>
+      <PlausibleProvider domain="danielashpes.com">
+        <body className={inter.className}>
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+        </body>
+      </PlausibleProvider>
     </html>
   )
 }

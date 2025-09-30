@@ -32,7 +32,7 @@ interface BlogPost {
   viewCount?: number
   readingTimeMinutes?: number
 }
-import { Trash2, Edit, Plus, Save, LogOut, Eye } from 'lucide-react'
+import { Trash2, Edit, Plus, Save, LogOut, Eye, Heart } from 'lucide-react'
 import { ImageUpload } from '../components/image-upload'
 import GitHubSync from '../components/github-sync'
 import { BlogPostForm } from '../components/blog-post-form'
@@ -51,6 +51,14 @@ export default function AdminDashboard() {
   const [blogLoading, setBlogLoading] = useState(false)
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null)
   const [isPostDialogOpen, setIsPostDialogOpen] = useState(false)
+
+  // Analytics state
+  const [siteAnalytics, setSiteAnalytics] = useState<any>(null)
+  const [projectAnalytics, setProjectAnalytics] = useState<any>(null)
+  const [blogAnalytics, setBlogAnalytics] = useState<any>(null)
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
+  const [analyticsPeriod, setAnalyticsPeriod] = useState(30)
+  const [analyticsTab, setAnalyticsTab] = useState<'site' | 'projects' | 'blog'>('site')
 
   const router = useRouter()
 
@@ -203,6 +211,49 @@ export default function AdminDashboard() {
     }
   }, [fetchBlogPosts])
 
+  // Fetch analytics
+  const fetchAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true)
+    try {
+      const token = localStorage.getItem('admin-token')
+      const [siteRes, projectRes, blogRes] = await Promise.all([
+        fetch(`/api/admin/analytics/site?days=${analyticsPeriod}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`/api/admin/analytics/projects?days=${analyticsPeriod}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`/api/admin/analytics/blog?days=${analyticsPeriod}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+      ])
+
+      if (siteRes.ok) {
+        const data = await siteRes.json()
+        setSiteAnalytics(data)
+      }
+      if (projectRes.ok) {
+        const data = await projectRes.json()
+        setProjectAnalytics(data)
+      }
+      if (blogRes.ok) {
+        const data = await blogRes.json()
+        setBlogAnalytics(data)
+      }
+    } catch {
+      toast.error('Failed to load analytics')
+    } finally {
+      setAnalyticsLoading(false)
+    }
+  }, [analyticsPeriod])
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin-token')
+    if (token) {
+      fetchAnalytics()
+    }
+  }, [fetchAnalytics])
+
   const saveBlogPost = async (postData: BlogPost) => {
     const token = localStorage.getItem('admin-token')
     const isUpdate = !!editingPost?.id
@@ -287,7 +338,7 @@ export default function AdminDashboard() {
               <Save className="w-4 h-4 mr-2" />
               {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
-            <Button onClick={handleLogout} variant="outline" className="border-gray-600">
+            <Button onClick={handleLogout} className="border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white">
               <LogOut className="w-4 h-4 mr-2" />
               Logout
             </Button>
@@ -298,6 +349,7 @@ export default function AdminDashboard() {
           <TabsList className="bg-gray-800">
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="blog">Blog</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="github">GitHub Sync</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
@@ -358,6 +410,374 @@ export default function AdminDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            {/* Analytics Sub-Navigation */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => setAnalyticsTab('site')}
+                  className={analyticsTab === 'site' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'}
+                >
+                  Site-Wide
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setAnalyticsTab('projects')}
+                  className={analyticsTab === 'projects' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'}
+                >
+                  Projects
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setAnalyticsTab('blog')}
+                  className={analyticsTab === 'blog' ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'}
+                >
+                  Blog
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => setAnalyticsPeriod(7)}
+                  className={analyticsPeriod === 7 ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'}
+                >
+                  7 Days
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setAnalyticsPeriod(30)}
+                  className={analyticsPeriod === 30 ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'}
+                >
+                  30 Days
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setAnalyticsPeriod(90)}
+                  className={analyticsPeriod === 90 ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white'}
+                >
+                  90 Days
+                </Button>
+              </div>
+            </div>
+
+            {analyticsLoading ? (
+              <div className="text-center py-16">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                <p className="mt-4 text-gray-400">Loading analytics...</p>
+              </div>
+            ) : analyticsTab === 'site' && siteAnalytics ? (
+              <>
+                {/* Summary Cards - SITE WIDE */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400">Total Views</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{siteAnalytics.summary.totalViews.toLocaleString()}</div>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {siteAnalytics.summary.recentViews} in last {analyticsPeriod} days
+                        <span className={`ml-2 ${siteAnalytics.summary.viewGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {siteAnalytics.summary.viewGrowth >= 0 ? '↑' : '↓'} {Math.abs(siteAnalytics.summary.viewGrowth)}%
+                        </span>
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400">Content</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{siteAnalytics.summary.totalProjects + siteAnalytics.summary.totalBlogPosts}</div>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {siteAnalytics.summary.totalProjects} projects, {siteAnalytics.summary.totalBlogPosts} posts
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400">Avg. Time Spent</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{siteAnalytics.summary.avgTimeSpentMinutes}m</div>
+                      <p className="text-xs text-gray-400 mt-1">Per session</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400">Engagement</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{siteAnalytics.summary.totalLikes.toLocaleString()}</div>
+                      <p className="text-xs text-gray-400 mt-1">Total likes</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Traffic Breakdown */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader>
+                      <CardTitle>Top Referrers</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {siteAnalytics.topReferrers?.slice(0, 8).map((ref: any, index: number) => (
+                          <div key={ref.referrer || index} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-sm">{ref.referrer || 'Direct'}</h4>
+                            </div>
+                            <div className="text-sm font-semibold">{ref.count.toLocaleString()}</div>
+                          </div>
+                        )) || <p className="text-gray-400 text-center py-8">No referrer data yet.</p>}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader>
+                      <CardTitle>Content Performance</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                          <div>
+                            <div className="text-sm text-gray-400">Project Views</div>
+                            <div className="text-2xl font-bold text-blue-400">{siteAnalytics.summary.totalProjectViews.toLocaleString()}</div>
+                          </div>
+                          <Eye className="w-8 h-8 text-blue-400" />
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                          <div>
+                            <div className="text-sm text-gray-400">Blog Views</div>
+                            <div className="text-2xl font-bold text-purple-400">{siteAnalytics.summary.totalBlogViews.toLocaleString()}</div>
+                          </div>
+                          <Eye className="w-8 h-8 text-purple-400" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Traffic Trends */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader>
+                      <CardTitle>Project Views Trend</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {siteAnalytics.trends.projectViews?.slice(0, 14).reverse().map((day: any) => {
+                          const maxCount = Math.max(...(siteAnalytics.trends.projectViews?.map((d: any) => d.count) || [1]))
+                          return (
+                            <div key={day.date} className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400 w-20">{day.date}</span>
+                              <div className="flex-1 bg-gray-800 rounded-full h-4 overflow-hidden">
+                                <div
+                                  className="bg-blue-500 h-full rounded-full transition-all"
+                                  style={{ width: `${Math.min((day.count / maxCount) * 100, 100)}%` }}
+                                />
+                              </div>
+                              <span className="text-sm font-semibold w-12 text-right">{day.count}</span>
+                            </div>
+                          )
+                        }) || <p className="text-gray-400 text-center py-8">No data yet.</p>}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader>
+                      <CardTitle>Blog Views Trend</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {siteAnalytics.trends.blogViews?.slice(0, 14).reverse().map((day: any) => {
+                          const maxCount = Math.max(...(siteAnalytics.trends.blogViews?.map((d: any) => d.count) || [1]))
+                          return (
+                            <div key={day.date} className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400 w-20">{day.date}</span>
+                              <div className="flex-1 bg-gray-800 rounded-full h-4 overflow-hidden">
+                                <div
+                                  className="bg-purple-500 h-full rounded-full transition-all"
+                                  style={{ width: `${Math.min((day.count / maxCount) * 100, 100)}%` }}
+                                />
+                              </div>
+                              <span className="text-sm font-semibold w-12 text-right">{day.count}</span>
+                            </div>
+                          )
+                        }) || <p className="text-gray-400 text-center py-8">No data yet.</p>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            ) : analyticsTab === 'projects' && projectAnalytics ? (
+              <>
+                {/* PROJECT ANALYTICS SUMMARY */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400">Total Projects</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{projectAnalytics.summary.totalProjects}</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400">Total Views</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{projectAnalytics.summary.totalViews.toLocaleString()}</div>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {projectAnalytics.summary.recentViews} recent
+                        <span className={`ml-2 ${projectAnalytics.summary.viewGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {projectAnalytics.summary.viewGrowth >= 0 ? '↑' : '↓'} {Math.abs(projectAnalytics.summary.viewGrowth)}%
+                        </span>
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400">Total Likes</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{projectAnalytics.summary.totalLikes.toLocaleString()}</div>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {projectAnalytics.summary.recentLikes} recent
+                        <span className={`ml-2 ${projectAnalytics.summary.likeGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {projectAnalytics.summary.likeGrowth >= 0 ? '↑' : '↓'} {Math.abs(projectAnalytics.summary.likeGrowth)}%
+                        </span>
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400">Engagement</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{projectAnalytics.summary.engagementRate}%</div>
+                      <p className="text-xs text-gray-400 mt-1">Likes per view</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Top Projects */}
+                <Card className="bg-gray-900 border-gray-700">
+                  <CardHeader>
+                    <CardTitle>Top Projects</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {projectAnalytics.topProjects?.slice(0, 10).map((project: any, index: number) => (
+                        <div key={project.id} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="text-lg font-bold text-gray-600">#{index + 1}</div>
+                            <div>
+                              <h4 className="font-semibold">{project.title}</h4>
+                              {project.category && (
+                                <Badge className="bg-purple-600 mt-1">{project.category}</Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-4 text-sm">
+                            <div>
+                              <Eye className="w-4 h-4 inline mr-1 text-blue-400" />
+                              <span className="font-semibold">{project.viewCount.toLocaleString()}</span>
+                            </div>
+                            <div>
+                              <Heart className="w-4 h-4 inline mr-1 text-red-400" />
+                              <span className="font-semibold">{project.likeCount.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )) || <p className="text-gray-400 text-center py-8">No projects yet.</p>}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : analyticsTab === 'blog' && blogAnalytics ? (
+              <>
+                {/* BLOG ANALYTICS SUMMARY */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400">Total Posts</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{blogAnalytics.summary.publishedPosts}</div>
+                      <p className="text-xs text-gray-400 mt-1">{blogAnalytics.summary.draftPosts} drafts</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400">Total Views</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{blogAnalytics.summary.totalViews.toLocaleString()}</div>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {blogAnalytics.summary.recentViews} recent
+                        <span className={`ml-2 ${blogAnalytics.summary.viewGrowth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {blogAnalytics.summary.viewGrowth >= 0 ? '↑' : '↓'} {Math.abs(blogAnalytics.summary.viewGrowth)}%
+                        </span>
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400">Avg. Time Spent</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{blogAnalytics.summary.avgTimeSpentMinutes}m</div>
+                      <p className="text-xs text-gray-400 mt-1">Per post</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gray-900 border-gray-700">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-400">Completion Rate</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{blogAnalytics.summary.completionRate}%</div>
+                      <p className="text-xs text-gray-400 mt-1">Avg. reading progress</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Top Posts */}
+                <Card className="bg-gray-900 border-gray-700">
+                  <CardHeader>
+                    <CardTitle>Top Blog Posts</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {blogAnalytics.topPosts?.slice(0, 10).map((post: any, index: number) => (
+                        <div key={post.id} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="text-lg font-bold text-gray-600">#{index + 1}</div>
+                            <div className="flex-1">
+                              <h4 className="font-semibold">{post.title}</h4>
+                              <p className="text-xs text-gray-400">{post.readingTimeMinutes} min read</p>
+                            </div>
+                          </div>
+                          <div className="text-sm font-semibold">{post.viewCount.toLocaleString()} views</div>
+                        </div>
+                      )) || <p className="text-gray-400 text-center py-8">No posts yet.</p>}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-gray-400">Loading analytics...</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="blog" className="space-y-6">

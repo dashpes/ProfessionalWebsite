@@ -14,6 +14,7 @@
       "featured": true,
       "order": 1,
       "image": "",
+      "category": "Full-Stack",
       "technologies": [
         "Next.js 15",
         "TypeScript",
@@ -31,6 +32,7 @@
       "description": "Data analysis of production trends in comedy movies using Python and data visualization.",
       "featured": true,
       "order": 2,
+      "category": "Data Science",
       "technologies": [
         "Python",
         "Data Analysis",
@@ -43,6 +45,7 @@
       "description": "A desktop photo management application similar to Picasa, built with Python.",
       "featured": true,
       "order": 3,
+      "category": "Desktop App",
       "technologies": [
         "Python",
         "GUI",
@@ -52,6 +55,7 @@
     "NewsAggregator": {
       "title": "News Aggregator",
       "description": "Intelligent news aggregation tool that collects and organizes articles by topic.",
+      "category": "Backend",
       "technologies": [
         "Python",
         "Web Scraping",
@@ -62,6 +66,7 @@
     "Unit_Converter": {
       "title": "Unit Converter",
       "description": "A versatile unit conversion utility supporting multiple measurement types.",
+      "category": "Utility",
       "technologies": [
         "Python",
         "CLI",

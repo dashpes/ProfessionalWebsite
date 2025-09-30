@@ -119,8 +119,56 @@ export class GitHubService {
       live: repo.homepage || undefined,
       featured: repo.stargazers_count > 0 || repo.topics.includes('featured'),
       manual: false,
-      status: repo.archived ? 'archived' : 'active'
+      status: repo.archived ? 'archived' : 'active',
+      category: this.inferCategory(repo)
     }
+  }
+
+  private inferCategory(repo: GitHubRepo): string {
+    const lang = repo.language?.toLowerCase() || ''
+    const topics = repo.topics || []
+    const description = (repo.description || '').toLowerCase()
+
+    // Check for specific patterns
+    if (topics.includes('machine-learning') || topics.includes('data-science') ||
+        description.includes('data analysis') || description.includes('machine learning')) {
+      return 'Data Science'
+    }
+
+    if (topics.includes('mobile') || topics.includes('ios') || topics.includes('android') ||
+        lang === 'swift' || lang === 'kotlin') {
+      return 'Mobile'
+    }
+
+    if (topics.includes('game') || topics.includes('unity') || description.includes('game')) {
+      return 'Game Dev'
+    }
+
+    if (topics.includes('cli') || topics.includes('terminal') || description.includes('cli') ||
+        description.includes('command line')) {
+      return 'CLI Tool'
+    }
+
+    if (lang === 'python' && (description.includes('desktop') || description.includes('gui'))) {
+      return 'Desktop App'
+    }
+
+    // Language-based defaults
+    if (lang === 'javascript' || lang === 'typescript' || lang === 'vue' || lang === 'react') {
+      if (repo.homepage) return 'Full-Stack'
+      return 'Frontend'
+    }
+
+    if (lang === 'python' || lang === 'java' || lang === 'go' || lang === 'rust') {
+      return 'Backend'
+    }
+
+    if (lang === 'c' || lang === 'c++') {
+      return 'Systems'
+    }
+
+    // Default fallback
+    return 'Development'
   }
 
   private formatTitle(repoName: string): string {

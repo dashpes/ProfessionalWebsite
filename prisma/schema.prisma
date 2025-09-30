@@ -31,18 +31,23 @@ model Project {
   primaryLanguage     String?             @map("primary_language")
   repoSize            Int                 @default(0) @map("repo_size")
   isPrivate           Boolean             @default(false) @map("is_private")
+  viewCount           Int                 @default(0) @map("view_count")
+  likeCount           Int                 @default(0) @map("like_count")
   createdAt           DateTime            @default(now()) @map("created_at")
   updatedAt           DateTime            @updatedAt @map("updated_at")
   lastGithubSync      DateTime?           @map("last_github_sync")
   syncHistory         GitHubSyncLog[]
   technologies        ProjectTechnology[]
   views               ProjectView[]
+  likes               ProjectLike[]
 
   @@index([featured])
   @@index([status])
   @@index([category])
   @@index([displayOrder])
   @@index([createdAt])
+  @@index([viewCount])
+  @@index([likeCount])
   @@map("projects")
 }
 
@@ -155,6 +160,20 @@ model ProjectView {
   @@index([viewedAt])
   @@index([country])
   @@map("project_views")
+}
+
+model ProjectLike {
+  id        String   @id @default(cuid())
+  projectId String   @map("project_id")
+  ipHash    String   @map("ip_hash")
+  userAgent String?  @map("user_agent")
+  likedAt   DateTime @default(now()) @map("liked_at")
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, ipHash])
+  @@index([projectId])
+  @@index([likedAt])
+  @@map("project_likes")
 }
 
 model BlogPostView {

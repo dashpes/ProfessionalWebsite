@@ -141,6 +141,9 @@ interface WavesProps {
   particleMode?: boolean // New prop to enable particle rendering
   particleSize?: number // Size of particles when in particle mode
   particleOpacity?: number // Opacity of particles
+  topographicMode?: boolean // New prop to enable topographic contour rendering
+  contourLevels?: number // Number of elevation levels
+  contourSpacing?: number // Distance between contour lines
 }
 
 const Waves: React.FC<WavesProps> = ({
@@ -161,6 +164,9 @@ const Waves: React.FC<WavesProps> = ({
   particleMode = false,
   particleSize = 2,
   particleOpacity = 0.7,
+  topographicMode = false,
+  contourLevels = 8,
+  contourSpacing = 50,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -364,10 +370,143 @@ const Waves: React.FC<WavesProps> = ({
       return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 }
     }
 
+    function drawTopographic() {
+      const { width, height } = boundingRef.current
+      const ctx = ctxRef.current
+      if (!ctx) return
+
+      ctx.clearRect(0, 0, width, height)
+
+      const noise = noiseRef.current
+      const cellSize = 8 // Grid cell size for marching squares
+      const cols = Math.ceil(width / cellSize) + 1
+      const rows = Math.ceil(height / cellSize) + 1
+
+      // Generate elevation field
+      const field: number[][] = []
+      const mouse = mouseRef.current
+
+      for (let i = 0; i < cols; i++) {
+        field[i] = []
+        for (let j = 0; j < rows; j++) {
+          const x = i * cellSize
+          const y = j * cellSize
+
+          // Multi-octave noise for more organic terrain
+          let elevation =
+            noise.perlin2(x * 0.003, y * 0.003) * 1.0 +
+            noise.perlin2(x * 0.006, y * 0.006) * 0.5 +
+            noise.perlin2(x * 0.012, y * 0.012) * 0.25
+
+          // Normalize
+          elevation = elevation / 1.75
+
+          // Add cursor influence if interactive
+          if (interactive) {
+            const dx = x - mouse.sx
+            const dy = y - mouse.sy
+            const dist = Math.hypot(dx, dy)
+            const influenceRadius = 250
+
+            if (dist < influenceRadius) {
+              const strength = Math.pow(1 - dist / influenceRadius, 2) * 0.4
+              elevation += strength
+            }
+          }
+
+          field[i][j] = elevation
+        }
+      }
+
+      // Draw contour lines using marching squares
+      for (let level = 0; level < contourLevels; level++) {
+        const isoValue = (level / (contourLevels - 1)) * 2 - 1 // Range from -1 to 1
+
+        // Major contour lines every 3 levels
+        const isMajor = level % 3 === 0
+        const lineWidth = isMajor ? 1.8 : 0.9
+        const opacity = isMajor ? 0.45 : 0.28
+
+        ctx.strokeStyle = lineColor.replace(/[\d.]+\)$/, `${opacity})`)
+        ctx.lineWidth = lineWidth
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
+
+        // March through the grid
+        for (let i = 0; i < cols - 1; i++) {
+          for (let j = 0; j < rows - 1; j++) {
+            const x = i * cellSize
+            const y = j * cellSize
+
+            // Get corner values
+            const v0 = field[i][j]
+            const v1 = field[i + 1][j]
+            const v2 = field[i + 1][j + 1]
+            const v3 = field[i][j + 1]
+
+            // Determine which edges the contour crosses
+            const edges: Array<{x: number, y: number}>[] = []
+
+            // Check each edge
+            if ((v0 < isoValue && v1 >= isoValue) || (v0 >= isoValue && v1 < isoValue)) {
+              const t = (isoValue - v0) / (v1 - v0)
+              edges.push([{x: x + t * cellSize, y: y}])
+            }
+
+            if ((v1 < isoValue && v2 >= isoValue) || (v1 >= isoValue && v2 < isoValue)) {
+              const t = (isoValue - v1) / (v2 - v1)
+              const point = {x: x + cellSize, y: y + t * cellSize}
+              if (edges.length > 0) {
+                edges[edges.length - 1].push(point)
+              } else {
+                edges.push([point])
+              }
+            }
+
+            if ((v3 < isoValue && v2 >= isoValue) || (v3 >= isoValue && v2 < isoValue)) {
+              const t = (isoValue - v3) / (v2 - v3)
+              const point = {x: x + t * cellSize, y: y + cellSize}
+              if (edges.length > 0) {
+                edges[edges.length - 1].push(point)
+              } else {
+                edges.push([point])
+              }
+            }
+
+            if ((v0 < isoValue && v3 >= isoValue) || (v0 >= isoValue && v3 < isoValue)) {
+              const t = (isoValue - v0) / (v3 - v0)
+              const point = {x: x, y: y + t * cellSize}
+              if (edges.length > 0) {
+                edges[edges.length - 1].push(point)
+              } else {
+                edges.push([point])
+              }
+            }
+
+            // Draw line segments
+            edges.forEach(segment => {
+              if (segment.length === 2) {
+                ctx.beginPath()
+                ctx.moveTo(segment[0].x, segment[0].y)
+                ctx.lineTo(segment[1].x, segment[1].y)
+                ctx.stroke()
+              }
+            })
+          }
+        }
+      }
+    }
+
     function drawLines() {
       const { width, height } = boundingRef.current
       const ctx = ctxRef.current
       if (!ctx) return
+
+      // If topographic mode, use different rendering
+      if (topographicMode) {
+        drawTopographic()
+        return
+      }
 
       ctx.clearRect(0, 0, width, height)
 
@@ -529,7 +668,7 @@ const Waves: React.FC<WavesProps> = ({
         cancelAnimationFrame(frameIdRef.current)
       }
     }
-  }, [interactive, lineColor, particleMode, particleOpacity, particleSize, waveAmpX, waveAmpY]) // Add missing dependencies
+  }, [interactive, lineColor, particleMode, particleOpacity, particleSize, waveAmpX, waveAmpY, topographicMode, contourLevels, contourSpacing]) // Add missing dependencies
 
   return (
     <div

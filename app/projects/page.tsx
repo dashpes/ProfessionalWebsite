@@ -54,12 +54,12 @@ function ProjectsGrid() {
   }, [projects])
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto auto-rows-fr">
       {projects.map((project, index) => (
         <div
           key={project.id}
           ref={el => projectRefs.current[index] = el}
-          className={`transition-all duration-700 ease-out ${
+          className={`transition-all duration-700 ease-out h-full ${
             visibleProjects.includes(index)
               ? 'opacity-100 transform translate-y-0 scale-100'
               : 'opacity-0 transform translate-y-8 scale-95'
