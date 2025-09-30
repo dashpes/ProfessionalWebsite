@@ -25,7 +25,6 @@ export async function GET(request: NextRequest) {
       totalProjectLikes,
       recentProjectViews,
       recentBlogViews,
-      recentProjectLikes,
       dailyProjectViews,
       dailyBlogViews,
       topPages,

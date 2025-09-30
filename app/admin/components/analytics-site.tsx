@@ -1,10 +1,42 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Eye, TrendingUp, Clock, ExternalLink } from 'lucide-react'
+import { Eye, ExternalLink } from 'lucide-react'
+
+interface TrendData {
+  date: string
+  count: number
+}
+
+interface SummaryData {
+  totalViews: number
+  recentViews: number
+  viewGrowth: number
+  totalProjects: number
+  totalBlogPosts: number
+  avgTimeSpentMinutes: number
+  totalLikes: number
+  totalProjectViews: number
+  totalBlogViews: number
+}
+
+interface ReferrerData {
+  referrer: string
+  count: number
+}
+
+interface SiteAnalyticsData {
+  summary: SummaryData
+  period: { days: number }
+  trends: {
+    projectViews: TrendData[]
+    blogViews: TrendData[]
+  }
+  topReferrers: ReferrerData[]
+}
 
 interface SiteAnalyticsProps {
-  data: any
+  data: SiteAnalyticsData | null
   loading: boolean
 }
 
@@ -86,7 +118,7 @@ export function SiteAnalytics({ data, loading }: SiteAnalyticsProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {data.topReferrers.slice(0, 8).map((ref: any, index: number) => (
+              {data.topReferrers.slice(0, 8).map((ref, index: number) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1">
                     <ExternalLink className="w-4 h-4 text-gray-400" />
@@ -135,8 +167,8 @@ export function SiteAnalytics({ data, loading }: SiteAnalyticsProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {data.trends.projectViews.slice(0, 14).reverse().map((day: any) => {
-                const maxCount = Math.max(...data.trends.projectViews.map((d: any) => d.count), 1)
+              {data.trends.projectViews.slice(0, 14).reverse().map((day) => {
+                const maxCount = Math.max(...data.trends.projectViews.map((d) => d.count), 1)
                 return (
                   <div key={day.date} className="flex items-center gap-2">
                     <span className="text-xs text-gray-400 w-20">{day.date}</span>
@@ -163,8 +195,8 @@ export function SiteAnalytics({ data, loading }: SiteAnalyticsProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {data.trends.blogViews.slice(0, 14).reverse().map((day: any) => {
-                const maxCount = Math.max(...data.trends.blogViews.map((d: any) => d.count), 1)
+              {data.trends.blogViews.slice(0, 14).reverse().map((day) => {
+                const maxCount = Math.max(...data.trends.blogViews.map((d) => d.count), 1)
                 return (
                   <div key={day.date} className="flex items-center gap-2">
                     <span className="text-xs text-gray-400 w-20">{day.date}</span>

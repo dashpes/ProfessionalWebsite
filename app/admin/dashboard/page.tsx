@@ -53,9 +53,9 @@ export default function AdminDashboard() {
   const [isPostDialogOpen, setIsPostDialogOpen] = useState(false)
 
   // Analytics state
-  const [siteAnalytics, setSiteAnalytics] = useState<any>(null)
-  const [projectAnalytics, setProjectAnalytics] = useState<any>(null)
-  const [blogAnalytics, setBlogAnalytics] = useState<any>(null)
+  const [siteAnalytics, setSiteAnalytics] = useState<Record<string, unknown> | null>(null)
+  const [projectAnalytics, setProjectAnalytics] = useState<Record<string, unknown> | null>(null)
+  const [blogAnalytics, setBlogAnalytics] = useState<Record<string, unknown> | null>(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
   const [analyticsPeriod, setAnalyticsPeriod] = useState(30)
   const [analyticsTab, setAnalyticsTab] = useState<'site' | 'projects' | 'blog'>('site')
@@ -528,7 +528,7 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {siteAnalytics.topReferrers?.slice(0, 8).map((ref: any, index: number) => (
+                        {siteAnalytics.topReferrers?.slice(0, 8).map((ref: { referrer: string; count: number }, index: number) => (
                           <div key={ref.referrer || index} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
                             <div className="flex-1">
                               <h4 className="font-semibold text-sm">{ref.referrer || 'Direct'}</h4>
@@ -573,8 +573,8 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        {siteAnalytics.trends.projectViews?.slice(0, 14).reverse().map((day: any) => {
-                          const maxCount = Math.max(...(siteAnalytics.trends.projectViews?.map((d: any) => d.count) || [1]))
+                        {siteAnalytics.trends.projectViews?.slice(0, 14).reverse().map((day: { date: string; count: number }) => {
+                          const maxCount = Math.max(...(siteAnalytics.trends.projectViews?.map((d: { count: number }) => d.count) || [1]))
                           return (
                             <div key={day.date} className="flex items-center gap-2">
                               <span className="text-xs text-gray-400 w-20">{day.date}</span>
@@ -598,8 +598,8 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        {siteAnalytics.trends.blogViews?.slice(0, 14).reverse().map((day: any) => {
-                          const maxCount = Math.max(...(siteAnalytics.trends.blogViews?.map((d: any) => d.count) || [1]))
+                        {siteAnalytics.trends.blogViews?.slice(0, 14).reverse().map((day: { date: string; count: number }) => {
+                          const maxCount = Math.max(...(siteAnalytics.trends.blogViews?.map((d: { count: number }) => d.count) || [1]))
                           return (
                             <div key={day.date} className="flex items-center gap-2">
                               <span className="text-xs text-gray-400 w-20">{day.date}</span>
@@ -676,7 +676,7 @@ export default function AdminDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {projectAnalytics.topProjects?.slice(0, 10).map((project: any, index: number) => (
+                      {projectAnalytics.topProjects?.slice(0, 10).map((project: { id: string; title: string; category?: string; viewCount: number; likeCount: number }, index: number) => (
                         <div key={project.id} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
                           <div className="flex items-center gap-3">
                             <div className="text-lg font-bold text-gray-600">#{index + 1}</div>
@@ -757,7 +757,7 @@ export default function AdminDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {blogAnalytics.topPosts?.slice(0, 10).map((post: any, index: number) => (
+                      {blogAnalytics.topPosts?.slice(0, 10).map((post: { id: string; title: string; readingTimeMinutes: number; viewCount: number }, index: number) => (
                         <div key={post.id} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
                           <div className="flex items-center gap-3 flex-1">
                             <div className="text-lg font-bold text-gray-600">#{index + 1}</div>
