@@ -13,7 +13,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { Project, ProjectConfig } from '@/lib/types'
-import { Trash2, Edit, Plus, Save, LogOut, FileText, Eye, Calendar } from 'lucide-react'
+
+interface BlogPost {
+  id?: string
+  title: string
+  content: string
+  excerpt?: string
+  coverImage?: string
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'SCHEDULED'
+  featured: boolean
+  metaTitle?: string
+  metaDescription?: string
+  keywords: string[]
+  categories?: { category: { id: string; name: string } }[]
+  tags?: { tag: { id: string; name: string } }[]
+  publishedAt?: string
+  createdAt?: string
+  viewCount?: number
+  readingTimeMinutes?: number
+}
+import { Trash2, Edit, Plus, Save, LogOut, Eye } from 'lucide-react'
 import { ImageUpload } from '../components/image-upload'
 import GitHubSync from '../components/github-sync'
 import { BlogPostForm } from '../components/blog-post-form'
@@ -28,12 +47,10 @@ export default function AdminDashboard() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   // Blog state
-  const [blogPosts, setBlogPosts] = useState<any[]>([])
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
   const [blogLoading, setBlogLoading] = useState(false)
-  const [editingPost, setEditingPost] = useState<any>(null)
+  const [editingPost, setEditingPost] = useState<BlogPost | null>(null)
   const [isPostDialogOpen, setIsPostDialogOpen] = useState(false)
-  const [blogPage, setBlogPage] = useState(1)
-  const [blogTotal, setBlogTotal] = useState(0)
 
   const router = useRouter()
 
@@ -162,14 +179,13 @@ export default function AdminDashboard() {
     setBlogLoading(true)
     try {
       const token = localStorage.getItem('admin-token')
-      const response = await fetch(`/api/blog/posts?admin=true&page=${blogPage}&limit=10`, {
+      const response = await fetch(`/api/blog/posts?admin=true&page=1&limit=10`, {
         headers: { Authorization: `Bearer ${token}` }
       })
 
       if (response.ok) {
         const data = await response.json()
         setBlogPosts(data.posts)
-        setBlogTotal(data.pagination.total)
       } else {
         toast.error('Failed to load blog posts')
       }
@@ -178,7 +194,7 @@ export default function AdminDashboard() {
     } finally {
       setBlogLoading(false)
     }
-  }, [blogPage])
+  }, [])
 
   useEffect(() => {
     const token = localStorage.getItem('admin-token')
@@ -187,7 +203,7 @@ export default function AdminDashboard() {
     }
   }, [fetchBlogPosts])
 
-  const saveBlogPost = async (postData: any) => {
+  const saveBlogPost = async (postData: BlogPost) => {
     const token = localStorage.getItem('admin-token')
     const isUpdate = !!editingPost?.id
 
@@ -213,7 +229,7 @@ export default function AdminDashboard() {
         const error = await response.json()
         toast.error(error.error || `Failed to ${isUpdate ? 'update' : 'create'} blog post`)
       }
-    } catch (error) {
+    } catch {
       toast.error(`Failed to ${isUpdate ? 'update' : 'create'} blog post`)
     }
   }
@@ -239,7 +255,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const openPostDialog = (post?: any) => {
+  const openPostDialog = (post?: BlogPost) => {
     setEditingPost(post || null)
     setIsPostDialogOpen(true)
   }
@@ -387,12 +403,12 @@ export default function AdminDashboard() {
                           </div>
                           <p className="text-gray-400 text-sm mb-2">{post.excerpt}</p>
                           <div className="flex gap-2 mb-2">
-                            {post.categories?.map((cat: any) => (
+                            {post.categories?.map((cat: { category: { id: string; name: string } }) => (
                               <span key={cat.category.id} className="bg-blue-700 px-2 py-1 rounded text-xs">
                                 {cat.category.name}
                               </span>
                             ))}
-                            {post.tags?.map((tag: any) => (
+                            {post.tags?.map((tag: { tag: { id: string; name: string } }) => (
                               <span key={tag.tag.id} className="bg-green-700 px-2 py-1 rounded text-xs">
                                 {tag.tag.name}
                               </span>

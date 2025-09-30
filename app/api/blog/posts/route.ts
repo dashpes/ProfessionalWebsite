@@ -40,7 +40,29 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit
 
     // Build where clause
-    const where: any = {}
+    const where: {
+      status?: BlogPostStatus
+      featured?: boolean
+      OR?: Array<{
+        title?: { contains: string; mode: 'insensitive' }
+        excerpt?: { contains: string; mode: 'insensitive' }
+        content?: { contains: string; mode: 'insensitive' }
+      }>
+      categories?: {
+        some: {
+          category: {
+            slug: string
+          }
+        }
+      }
+      tags?: {
+        some: {
+          tag: {
+            slug: string
+          }
+        }
+      }
+    } = {}
 
     // For non-admin requests, only show published posts
     if (!isAdmin) {

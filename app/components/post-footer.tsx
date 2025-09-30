@@ -24,7 +24,7 @@ export function PostFooter({ slug, title }: PostFooterProps) {
           text: shareText,
           url: shareUrl
         })
-      } catch (error) {
+      } catch {
         // Fallback to copying to clipboard
         if (navigator.clipboard) {
           await navigator.clipboard.writeText(shareUrl)

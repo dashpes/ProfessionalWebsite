@@ -12,8 +12,21 @@ import { Edit, Save, X, Trash2, ExternalLink, Github } from 'lucide-react'
 import { toast } from 'sonner'
 import { ImageUpload } from './image-upload'
 
+interface Project {
+  id: string
+  title: string
+  description: string
+  technologies: string[]
+  featured?: boolean
+  order?: number
+  image?: string
+  github?: string
+  live?: string
+  hasOverrides?: boolean
+}
+
 interface EditableProjectCardProps {
-  project: any
+  project: Project
   isManual: boolean
   onUpdate: () => void
   onDelete: (projectId: string, isManual: boolean) => void

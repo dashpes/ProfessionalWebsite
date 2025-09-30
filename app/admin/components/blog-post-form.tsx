@@ -74,8 +74,8 @@ export function BlogPostForm({ post, onSave, onCancel, loading = false }: BlogPo
       fetch('/api/blog/categories').then(res => res.json()),
       fetch('/api/blog/tags').then(res => res.json())
     ]).then(([categories, tags]) => {
-      setAvailableCategories(categories.map((c: any) => c.name))
-      setAvailableTags(tags.map((t: any) => t.name))
+      setAvailableCategories(categories.map((c: { name: string }) => c.name))
+      setAvailableTags(tags.map((t: { name: string }) => t.name))
     }).catch(console.error)
   }, [])
 
@@ -261,7 +261,7 @@ export function BlogPostForm({ post, onSave, onCancel, loading = false }: BlogPo
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="status" className="text-white">Status</Label>
-                <Select value={formData.status} onValueChange={(value: any) => setFormData({ ...formData, status: value })}>
+                <Select value={formData.status} onValueChange={(value: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'SCHEDULED') => setFormData({ ...formData, status: value })}>
                   <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                     <SelectValue />
                   </SelectTrigger>

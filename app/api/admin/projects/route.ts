@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminToken } from '@/lib/auth'
 import { db, logAdminActivity } from '@/lib/database'
-import { ProjectConfig, Project } from '@/lib/types'
+import { ProjectConfig } from '@/lib/types'
 
 // Get current project configuration
 export async function GET(request: NextRequest) {
@@ -60,7 +60,14 @@ export async function GET(request: NextRequest) {
       }))
 
     // Build repo overrides from GitHub projects with overrides
-    const repoOverrides: Record<string, any> = {}
+    const repoOverrides: Record<string, {
+      title: string
+      description: string | null
+      image: string | null
+      featured: boolean
+      order: number | null
+      technologies: string[]
+    }> = {}
     projects
       .filter(p => p.source === 'GITHUB')
       .filter(p => p.titleOverride || p.descriptionOverride || p.imageUrlOverride || p.featured || p.displayOrder)
@@ -75,7 +82,19 @@ export async function GET(request: NextRequest) {
         }
       })
 
-    const config: ProjectConfig & { githubProjects?: any[] } = {
+    const config: ProjectConfig & { githubProjects?: Array<{
+      id: string
+      title: string
+      description: string
+      technologies: string[]
+      featured: boolean
+      github: string | null
+      live: string | null
+      image: string | null
+      order: number | null
+      manual: boolean
+      hasOverrides?: boolean
+    }> } = {
       githubUsername: 'danielashpes',
       excludeRepos: [],
       includeRepos: [],
