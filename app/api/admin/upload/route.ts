@@ -4,7 +4,8 @@ import path from 'path'
 import { verifyAdminToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
-  if (!verifyAdminToken(request)) {
+  const authResult = verifyAdminToken(request)
+  if (!authResult.valid) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

@@ -29,7 +29,7 @@ export async function GET(
 
     // Check if admin request
     if (isAdmin) {
-      const authResult = await verifyAdminToken(request)
+      const authResult = verifyAdminToken(request)
       if (!authResult.valid) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
@@ -80,7 +80,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const authResult = await verifyAdminToken(request)
+    const authResult = verifyAdminToken(request)
     if (!authResult.valid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -265,7 +265,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const authResult = await verifyAdminToken(request)
+    const authResult = verifyAdminToken(request)
     if (!authResult.valid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

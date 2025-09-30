@@ -5,7 +5,8 @@ import { verifyAdminToken } from '@/lib/auth'
 export async function GET(request: NextRequest) {
   try {
     // Verify admin authentication
-    if (!verifyAdminToken(request)) {
+    const authResult = verifyAdminToken(request)
+    if (!authResult.valid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

@@ -30,8 +30,24 @@ interface BlogPost {
   publishedAt?: string
 }
 
+interface BlogPostFromAPI {
+  id?: string
+  title: string
+  content: string
+  excerpt?: string
+  coverImage?: string
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'SCHEDULED'
+  featured: boolean
+  metaTitle?: string
+  metaDescription?: string
+  keywords: string[]
+  categories?: { category: { id: string; name: string } }[]
+  tags?: { tag: { id: string; name: string } }[]
+  publishedAt?: string
+}
+
 interface BlogPostFormProps {
-  post?: BlogPost | null
+  post?: BlogPostFromAPI | null
   onSave: (post: BlogPost) => Promise<void>
   onCancel: () => void
   loading?: boolean
@@ -62,7 +78,18 @@ export function BlogPostForm({ post, onSave, onCancel, loading = false }: BlogPo
   useEffect(() => {
     if (post) {
       setFormData({
-        ...post,
+        id: post.id,
+        title: post.title || '',
+        content: post.content || '',
+        excerpt: post.excerpt || '',
+        coverImage: post.coverImage || '',
+        status: post.status || 'DRAFT',
+        featured: post.featured || false,
+        metaTitle: post.metaTitle || '',
+        metaDescription: post.metaDescription || '',
+        keywords: post.keywords || [],
+        categories: post.categories?.map(c => c.category.name) || [],
+        tags: post.tags?.map(t => t.tag.name) || [],
         publishedAt: post.publishedAt ? new Date(post.publishedAt).toISOString().slice(0, 16) : ''
       })
     }
@@ -261,17 +288,21 @@ export function BlogPostForm({ post, onSave, onCancel, loading = false }: BlogPo
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="status" className="text-white">Status</Label>
-                <Select value={formData.status} onValueChange={(value: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'SCHEDULED') => setFormData({ ...formData, status: value })}>
-                  <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="DRAFT">Draft</SelectItem>
-                    <SelectItem value="PUBLISHED">Published</SelectItem>
-                    <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-                    <SelectItem value="ARCHIVED">Archived</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select
+                  id="status"
+                  value={formData.status}
+                  onChange={(e) => {
+                    const value = e.target.value as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | 'SCHEDULED'
+                    console.log('Status changed to:', value)
+                    setFormData({ ...formData, status: value })
+                  }}
+                  className="flex h-9 w-full items-center justify-between rounded-md border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white shadow-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                >
+                  <option value="DRAFT">Draft</option>
+                  <option value="PUBLISHED">Published</option>
+                  <option value="SCHEDULED">Scheduled</option>
+                  <option value="ARCHIVED">Archived</option>
+                </select>
               </div>
 
               {(formData.status === 'PUBLISHED' || formData.status === 'SCHEDULED') && (

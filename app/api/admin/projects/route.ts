@@ -5,7 +5,8 @@ import { ProjectConfig } from '@/lib/types'
 
 // Get current project configuration
 export async function GET(request: NextRequest) {
-  if (!verifyAdminToken(request)) {
+  const authResult = verifyAdminToken(request)
+  if (!authResult.valid) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -118,7 +119,7 @@ export async function GET(request: NextRequest) {
 // Update project configuration
 export async function PUT(request: NextRequest) {
   const authResult = verifyAdminToken(request)
-  if (!authResult) {
+  if (!authResult.valid) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

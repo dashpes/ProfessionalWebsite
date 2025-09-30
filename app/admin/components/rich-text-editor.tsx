@@ -22,7 +22,7 @@ import {
   Link as LinkIcon,
   ImageIcon
 } from 'lucide-react'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 
 interface RichTextEditorProps {
   content: string
@@ -64,6 +64,13 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
     }
   })
 
+  // Update editor content when content prop changes
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content)
+    }
+  }, [content, editor])
+
   const addImage = useCallback(() => {
     const url = window.prompt('Enter image URL:')
     if (url) {
@@ -90,7 +97,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           size="sm"
           variant="ghost"
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={editor.isActive('bold') ? 'bg-gray-600' : ''}
+          className={editor.isActive('bold') ? 'bg-gray-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <Bold className="w-4 h-4" />
         </Button>
@@ -99,7 +106,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           size="sm"
           variant="ghost"
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={editor.isActive('italic') ? 'bg-gray-600' : ''}
+          className={editor.isActive('italic') ? 'bg-gray-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <Italic className="w-4 h-4" />
         </Button>
@@ -108,7 +115,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           size="sm"
           variant="ghost"
           onClick={() => editor.chain().focus().toggleCode().run()}
-          className={editor.isActive('code') ? 'bg-gray-600' : ''}
+          className={editor.isActive('code') ? 'bg-gray-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <Code className="w-4 h-4" />
         </Button>
@@ -119,7 +126,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           size="sm"
           variant="ghost"
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={editor.isActive('heading', { level: 1 }) ? 'bg-gray-600' : ''}
+          className={editor.isActive('heading', { level: 1 }) ? 'bg-gray-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <Heading1 className="w-4 h-4" />
         </Button>
@@ -128,7 +135,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           size="sm"
           variant="ghost"
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={editor.isActive('heading', { level: 2 }) ? 'bg-gray-600' : ''}
+          className={editor.isActive('heading', { level: 2 }) ? 'bg-gray-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <Heading2 className="w-4 h-4" />
         </Button>
@@ -137,7 +144,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           size="sm"
           variant="ghost"
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={editor.isActive('heading', { level: 3 }) ? 'bg-gray-600' : ''}
+          className={editor.isActive('heading', { level: 3 }) ? 'bg-gray-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <Heading3 className="w-4 h-4" />
         </Button>
@@ -146,7 +153,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           size="sm"
           variant="ghost"
           onClick={() => editor.chain().focus().setParagraph().run()}
-          className={editor.isActive('paragraph') ? 'bg-gray-600' : ''}
+          className={editor.isActive('paragraph') ? 'bg-gray-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <Type className="w-4 h-4" />
         </Button>
@@ -157,7 +164,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           size="sm"
           variant="ghost"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={editor.isActive('bulletList') ? 'bg-gray-600' : ''}
+          className={editor.isActive('bulletList') ? 'bg-gray-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <List className="w-4 h-4" />
         </Button>
@@ -166,7 +173,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           size="sm"
           variant="ghost"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={editor.isActive('orderedList') ? 'bg-gray-600' : ''}
+          className={editor.isActive('orderedList') ? 'bg-gray-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <ListOrdered className="w-4 h-4" />
         </Button>
@@ -175,7 +182,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           size="sm"
           variant="ghost"
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={editor.isActive('blockquote') ? 'bg-gray-600' : ''}
+          className={editor.isActive('blockquote') ? 'bg-gray-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <Quote className="w-4 h-4" />
         </Button>
@@ -186,6 +193,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           size="sm"
           variant="ghost"
           onClick={addImage}
+          className="text-gray-300 hover:text-white hover:bg-gray-700"
         >
           <ImageIcon className="w-4 h-4" />
         </Button>
@@ -194,7 +202,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           size="sm"
           variant="ghost"
           onClick={addLink}
-          className={editor.isActive('link') ? 'bg-gray-600' : ''}
+          className={editor.isActive('link') ? 'bg-gray-600 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
         >
           <LinkIcon className="w-4 h-4" />
         </Button>
@@ -206,6 +214,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           variant="ghost"
           onClick={() => editor.chain().focus().undo().run()}
           disabled={!editor.can().undo()}
+          className="text-gray-300 hover:text-white hover:bg-gray-700 disabled:opacity-50"
         >
           <Undo className="w-4 h-4" />
         </Button>
@@ -215,6 +224,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           variant="ghost"
           onClick={() => editor.chain().focus().redo().run()}
           disabled={!editor.can().redo()}
+          className="text-gray-300 hover:text-white hover:bg-gray-700 disabled:opacity-50"
         >
           <Redo className="w-4 h-4" />
         </Button>

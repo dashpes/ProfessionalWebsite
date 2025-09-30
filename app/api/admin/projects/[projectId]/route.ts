@@ -7,7 +7,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { projectId: string } }
 ) {
-  if (!verifyAdminToken(request)) {
+  const authResult = verifyAdminToken(request)
+  if (!authResult.valid) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -114,7 +115,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { projectId: string } }
 ) {
-  if (!verifyAdminToken(request)) {
+  const authResult = verifyAdminToken(request)
+  if (!authResult.valid) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

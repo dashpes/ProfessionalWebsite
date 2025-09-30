@@ -6,7 +6,8 @@ import { getClientIP, sanitizeUserAgent, logAdminActivity } from '@/lib/database
 
 export async function POST(request: NextRequest) {
   // Verify admin authentication
-  if (!verifyAdminToken(request)) {
+  const authResult = verifyAdminToken(request)
+  if (!authResult.valid) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -106,7 +107,8 @@ export async function POST(request: NextRequest) {
 
 // Get sync status and history
 export async function GET(request: NextRequest) {
-  if (!verifyAdminToken(request)) {
+  const authResult = verifyAdminToken(request)
+  if (!authResult.valid) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

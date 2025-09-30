@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     // Only check admin auth if admin parameter is true
     if (isAdmin) {
-      const authResult = await verifyAdminToken(request)
+      const authResult = verifyAdminToken(request)
       if (!authResult.valid) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
@@ -64,9 +64,11 @@ export async function GET(request: NextRequest) {
       }
     } = {}
 
-    // For non-admin requests, only show published posts
+    // For non-admin requests, only show published posts (including scheduled posts that should be live)
     if (!isAdmin) {
       where.status = 'PUBLISHED'
+      // Note: Scheduled posts must be manually published or auto-published by a cron job
+      // They won't automatically appear here until status changes to PUBLISHED
     } else if (status) {
       where.status = status
     }
@@ -150,7 +152,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authResult = await verifyAdminToken(request)
+    const authResult = verifyAdminToken(request)
     if (!authResult.valid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -161,7 +163,7 @@ export async function POST(request: NextRequest) {
       content,
       excerpt,
       coverImage,
-      status = 'DRAFT',
+      status: rawStatus,
       featured = false,
       metaTitle,
       metaDescription,
@@ -170,6 +172,11 @@ export async function POST(request: NextRequest) {
       tags = [],
       publishedAt
     } = body
+
+    // Ensure status is valid, default to DRAFT if empty or invalid
+    const status = rawStatus && ['DRAFT', 'PUBLISHED', 'ARCHIVED', 'SCHEDULED'].includes(rawStatus)
+      ? rawStatus
+      : 'DRAFT'
 
     if (!title || !content) {
       return NextResponse.json({ error: 'Title and content are required' }, { status: 400 })

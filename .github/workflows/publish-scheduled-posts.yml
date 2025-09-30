@@ -1,0 +1,29 @@
+name: Publish Scheduled Blog Posts
+
+on:
+  schedule:
+    # Runs every hour at minute 0
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allows manual triggering from GitHub Actions UI
+
+jobs:
+  publish-posts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call publish endpoint
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            ${{ secrets.SITE_URL }}/api/blog/posts/publish-scheduled)
+
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+
+          echo "HTTP Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" -ne 200 ]; then
+            echo "Failed to publish scheduled posts"
+            exit 1
+          fi
