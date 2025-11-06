@@ -32,11 +32,12 @@ interface BlogPost {
   viewCount?: number
   readingTimeMinutes?: number
 }
-import { Trash2, Edit, Plus, Save, LogOut, Eye, Heart } from 'lucide-react'
+import { Trash2, Edit, Plus, Save, LogOut, Eye, Heart, Mail, Send } from 'lucide-react'
 import { ImageUpload } from '../components/image-upload'
 import GitHubSync from '../components/github-sync'
 import { BlogPostForm } from '../components/blog-post-form'
 import { EditableProjectCard } from '../components/editable-project-card'
+import { NewsletterEditor } from '../components/newsletter-editor'
 
 
 export default function AdminDashboard() {
@@ -59,6 +60,18 @@ export default function AdminDashboard() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
   const [analyticsPeriod, setAnalyticsPeriod] = useState(30)
   const [analyticsTab, setAnalyticsTab] = useState<'site' | 'projects' | 'blog'>('site')
+
+  // Newsletter state
+  const [subscribers, setSubscribers] = useState<Array<{ id: string; email: string; subscribed: boolean; subscribedAt: string }>>([])
+  const [campaigns, setCampaigns] = useState<Array<{ id: string; subject: string; recipientCount: number; status: string; sentAt: string | null; createdAt: string }>>([])
+  const [newsletterLoading, setNewsletterLoading] = useState(false)
+  const [campaignType, setCampaignType] = useState<'blog-post' | 'custom'>('blog-post')
+  const [selectedBlogPost, setSelectedBlogPost] = useState('')
+  const [customSubject, setCustomSubject] = useState('')
+  const [customContent, setCustomContent] = useState('')
+  const [sendingCampaign, setSendingCampaign] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewHtml, setPreviewHtml] = useState('')
 
   const router = useRouter()
 
@@ -140,32 +153,79 @@ export default function AdminDashboard() {
     setIsDialogOpen(true)
   }
 
-  const saveProject = () => {
+  const saveProject = async () => {
     if (!editingProject || !config) return
 
-    const updatedConfig = { ...config }
-    
-    if (editingProject.manual) {
-      // Handle manual projects
-      const existingIndex = updatedConfig.manualProjects.findIndex(p => p.id === editingProject.id)
-      
-      if (existingIndex >= 0) {
-        updatedConfig.manualProjects[existingIndex] = editingProject as Project
-      } else {
-        editingProject.id = editingProject.id || Date.now().toString()
-        updatedConfig.manualProjects.push(editingProject as Project)
-      }
-    } else {
-      // Handle GitHub repo overrides
-      if (editingProject.id) {
-        updatedConfig.repoOverrides = updatedConfig.repoOverrides || {}
-        updatedConfig.repoOverrides[editingProject.id] = editingProject
-      }
+    // Auto-generate ID if not provided for manual projects
+    if (editingProject.manual && !editingProject.id) {
+      editingProject.id = Date.now().toString()
     }
 
-    setConfig(updatedConfig)
-    setIsDialogOpen(false)
-    setEditingProject(null)
+    setIsSaving(true)
+    try {
+      const token = localStorage.getItem('admin-token')
+
+      if (editingProject.manual) {
+        // For manual projects, save directly to backend
+        const response = await fetch(`/api/admin/projects/${editingProject.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            title: editingProject.title,
+            description: editingProject.description,
+            technologies: editingProject.technologies,
+            image: editingProject.image,
+            github: editingProject.github,
+            live: editingProject.live,
+            featured: editingProject.featured,
+            order: editingProject.order
+          })
+        })
+
+        if (response.ok) {
+          toast.success('Project saved successfully!')
+          setIsDialogOpen(false)
+          setEditingProject(null)
+          fetchConfig() // Refresh the config
+        } else {
+          const error = await response.json()
+          toast.error(error.error || 'Failed to save project')
+        }
+      } else {
+        // For GitHub projects, update the config with overrides
+        const updatedConfig = { ...config }
+        if (editingProject.id) {
+          updatedConfig.repoOverrides = updatedConfig.repoOverrides || {}
+          updatedConfig.repoOverrides[editingProject.id] = editingProject
+        }
+
+        // Save the config
+        const response = await fetch('/api/admin/projects', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(updatedConfig)
+        })
+
+        if (response.ok) {
+          toast.success('Project saved successfully!')
+          setConfig(updatedConfig)
+          setIsDialogOpen(false)
+          setEditingProject(null)
+        } else {
+          toast.error('Failed to save project')
+        }
+      }
+    } catch {
+      toast.error('Failed to save project')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const deleteProject = (projectId: string, isManual: boolean) => {
@@ -253,6 +313,156 @@ export default function AdminDashboard() {
       fetchAnalytics()
     }
   }, [fetchAnalytics])
+
+  // Fetch newsletter data
+  const fetchNewsletterData = useCallback(async () => {
+    setNewsletterLoading(true)
+    try {
+      const token = localStorage.getItem('admin-token')
+      const [subscribersRes, campaignsRes] = await Promise.all([
+        fetch('/api/admin/newsletter/subscribers?status=all', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch('/api/admin/newsletter/campaigns', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ])
+
+      if (subscribersRes.ok) {
+        const data = await subscribersRes.json()
+        setSubscribers(data.subscribers)
+      }
+      if (campaignsRes.ok) {
+        const data = await campaignsRes.json()
+        setCampaigns(data.campaigns)
+      }
+    } catch {
+      toast.error('Failed to load newsletter data')
+    } finally {
+      setNewsletterLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin-token')
+    if (token) {
+      fetchNewsletterData()
+    }
+  }, [fetchNewsletterData])
+
+  const deleteSubscriber = async (subscriberId: string) => {
+    if (!confirm('Are you sure you want to delete this subscriber?')) return
+
+    const token = localStorage.getItem('admin-token')
+    try {
+      const response = await fetch(`/api/admin/newsletter/subscribers/${subscriberId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        toast.success('Subscriber deleted successfully!')
+        fetchNewsletterData()
+      } else {
+        toast.error('Failed to delete subscriber')
+      }
+    } catch {
+      toast.error('Failed to delete subscriber')
+    }
+  }
+
+  const generatePreview = async () => {
+    const token = localStorage.getItem('admin-token')
+
+    try {
+      const payload = campaignType === 'blog-post'
+        ? {
+            type: 'blog-post',
+            blogPostId: selectedBlogPost
+          }
+        : {
+            type: 'custom',
+            subject: customSubject,
+            content: customContent
+          }
+
+      const response = await fetch('/api/admin/newsletter/preview', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setPreviewHtml(data.html)
+        setShowPreview(true)
+      } else {
+        toast.error(data.error || 'Failed to generate preview')
+      }
+    } catch {
+      toast.error('Failed to generate preview')
+    }
+  }
+
+  const sendCampaign = async () => {
+    if (campaignType === 'blog-post' && !selectedBlogPost) {
+      toast.error('Please select a blog post')
+      return
+    }
+    if (campaignType === 'custom' && (!customSubject || !customContent)) {
+      toast.error('Please fill in subject and content')
+      return
+    }
+
+    if (!confirm(`Send newsletter to ${subscribers.filter(s => s.subscribed).length} subscribers?`)) return
+
+    setSendingCampaign(true)
+    const token = localStorage.getItem('admin-token')
+
+    try {
+      const payload = campaignType === 'blog-post'
+        ? {
+            type: 'blog-post',
+            blogPostId: selectedBlogPost,
+            subject: blogPosts.find(p => p.id === selectedBlogPost)?.title || 'New Blog Post'
+          }
+        : {
+            type: 'custom',
+            subject: customSubject,
+            content: customContent,
+            htmlContent: customContent
+          }
+
+      const response = await fetch('/api/admin/newsletter/send-campaign', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success(`Campaign sent to ${data.sent} subscribers!`)
+        setSelectedBlogPost('')
+        setCustomSubject('')
+        setCustomContent('')
+        fetchNewsletterData()
+      } else {
+        toast.error(data.error || 'Failed to send campaign')
+      }
+    } catch {
+      toast.error('Failed to send campaign')
+    } finally {
+      setSendingCampaign(false)
+    }
+  }
 
   const saveBlogPost = async (postData: BlogPost) => {
     const token = localStorage.getItem('admin-token')
@@ -349,6 +559,7 @@ export default function AdminDashboard() {
           <TabsList className="bg-gray-800">
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="blog">Blog</TabsTrigger>
+            <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="github">GitHub Sync</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -860,6 +1071,194 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="newsletter" className="space-y-6">
+            {/* Subscribers */}
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Subscribers</CardTitle>
+                    <p className="text-sm text-gray-400 mt-1">
+                      {subscribers.filter(s => s.subscribed).length} active subscribers
+                    </p>
+                  </div>
+                  <Badge className="bg-blue-600">
+                    <Mail className="w-3 h-3 mr-1" />
+                    {subscribers.filter(s => s.subscribed).length}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {newsletterLoading ? (
+                  <div className="text-center py-8">Loading subscribers...</div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="max-h-96 overflow-y-auto">
+                      {subscribers.map((subscriber) => (
+                        <div key={subscriber.id} className="flex items-center justify-between p-3 bg-gray-800 rounded-lg mb-2">
+                          <div>
+                            <p className="font-medium">{subscriber.email}</p>
+                            <p className="text-xs text-gray-400">
+                              {subscriber.subscribed ? 'Active' : 'Unsubscribed'} • Joined {new Date(subscriber.subscribedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Badge variant={subscriber.subscribed ? 'default' : 'outline'} className={subscriber.subscribed ? 'bg-green-600' : 'text-gray-400'}>
+                              {subscriber.subscribed ? 'Subscribed' : 'Unsubscribed'}
+                            </Badge>
+                            <Button size="sm" onClick={() => deleteSubscriber(subscriber.id)} className="bg-red-600 hover:bg-red-700">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {subscribers.length === 0 && (
+                        <p className="text-gray-400 text-center py-8">No subscribers yet.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Send Campaign */}
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader>
+                <CardTitle>Send Newsletter Campaign</CardTitle>
+                <p className="text-sm text-gray-400 mt-1">
+                  Send an email to all {subscribers.filter(s => s.subscribed).length} active subscribers
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Campaign Type</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      type="button"
+                      onClick={() => setCampaignType('blog-post')}
+                      className={campaignType === 'blog-post' ? 'bg-purple-600 hover:bg-purple-700' : 'border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700'}
+                    >
+                      Blog Post Announcement
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => setCampaignType('custom')}
+                      className={campaignType === 'custom' ? 'bg-purple-600 hover:bg-purple-700' : 'border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700'}
+                    >
+                      Custom Message
+                    </Button>
+                  </div>
+                </div>
+
+                {campaignType === 'blog-post' && (
+                  <div>
+                    <Label htmlFor="blogPostSelect">Select Blog Post</Label>
+                    <select
+                      id="blogPostSelect"
+                      value={selectedBlogPost}
+                      onChange={(e) => setSelectedBlogPost(e.target.value)}
+                      className="w-full bg-gray-800 border-gray-600 rounded-md p-2 text-white"
+                    >
+                      <option value="">Choose a blog post...</option>
+                      {blogPosts.filter(p => p.status === 'PUBLISHED').map((post) => (
+                        <option key={post.id} value={post.id}>
+                          {post.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {campaignType === 'custom' && (
+                  <>
+                    <div>
+                      <Label htmlFor="customSubject">Email Subject</Label>
+                      <Input
+                        id="customSubject"
+                        value={customSubject}
+                        onChange={(e) => setCustomSubject(e.target.value)}
+                        className="bg-gray-800 border-gray-600"
+                        placeholder="Your email subject..."
+                      />
+                    </div>
+                    <div>
+                      <Label>Email Content</Label>
+                      <p className="text-xs text-gray-400 mb-2">
+                        Use the editor below to format your message. Unsubscribe link will be automatically added to the footer.
+                      </p>
+                      <NewsletterEditor
+                        content={customContent}
+                        onChange={setCustomContent}
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={generatePreview}
+                    disabled={
+                      (campaignType === 'blog-post' && !selectedBlogPost) ||
+                      (campaignType === 'custom' && (!customSubject || !customContent))
+                    }
+                    className="flex-1 border border-gray-600 bg-gray-800 text-gray-300 hover:bg-gray-700"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Preview
+                  </Button>
+                  <Button
+                    onClick={sendCampaign}
+                    disabled={sendingCampaign || subscribers.filter(s => s.subscribed).length === 0}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    {sendingCampaign ? 'Sending...' : `Send to ${subscribers.filter(s => s.subscribed).length}`}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Campaign History */}
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader>
+                <CardTitle>Campaign History</CardTitle>
+                <p className="text-sm text-gray-400 mt-1">
+                  Past email campaigns sent to subscribers
+                </p>
+              </CardHeader>
+              <CardContent>
+                {newsletterLoading ? (
+                  <div className="text-center py-8">Loading campaigns...</div>
+                ) : (
+                  <div className="space-y-2">
+                    {campaigns.map((campaign) => (
+                      <div key={campaign.id} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                        <div className="flex-1">
+                          <h3 className="font-semibold">{campaign.subject}</h3>
+                          <p className="text-sm text-gray-400">
+                            {campaign.recipientCount} recipients • {campaign.sentAt ? new Date(campaign.sentAt).toLocaleString() : 'Not sent'}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className={
+                          campaign.status === 'SENT' ? 'border-green-500 text-green-400' :
+                          campaign.status === 'SENDING' ? 'border-blue-500 text-blue-400' :
+                          campaign.status === 'FAILED' ? 'border-red-500 text-red-400' :
+                          'border-gray-500 text-gray-400'
+                        }>
+                          {campaign.status}
+                        </Badge>
+                      </div>
+                    ))}
+                    {campaigns.length === 0 && (
+                      <p className="text-gray-400 text-center py-8">No campaigns sent yet.</p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="github" className="space-y-6">
             <GitHubSync />
           </TabsContent>
@@ -914,7 +1313,7 @@ export default function AdminDashboard() {
 
         {/* Project Edit Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-2xl">
+          <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingProject?.id ? 'Edit Project' : 'Add New Project'}
@@ -924,14 +1323,17 @@ export default function AdminDashboard() {
               <div className="space-y-4">
                 {editingProject.manual && (
                   <div>
-                    <Label htmlFor="projectId">Project ID</Label>
+                    <Label htmlFor="projectId">Project ID (optional)</Label>
                     <Input
                       id="projectId"
                       value={editingProject.id || ''}
                       onChange={(e) => setEditingProject({ ...editingProject, id: e.target.value })}
                       className="bg-gray-800 border-gray-600"
-                      placeholder="unique-project-id"
+                      placeholder="Leave blank to auto-generate"
                     />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Unique identifier for the project. Auto-generated if left blank.
+                    </p>
                   </div>
                 )}
                 
@@ -1027,11 +1429,11 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button onClick={() => setIsDialogOpen(false)} variant="outline" className="border-gray-600">
+                  <Button onClick={() => setIsDialogOpen(false)} variant="outline" className="border-gray-600 text-black hover:bg-gray-100" disabled={isSaving}>
                     Cancel
                   </Button>
-                  <Button onClick={saveProject} className="bg-purple-600 hover:bg-purple-700">
-                    Save Project
+                  <Button onClick={saveProject} className="bg-purple-600 hover:bg-purple-700" disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save Project'}
                   </Button>
                 </div>
               </div>
@@ -1053,6 +1455,26 @@ export default function AdminDashboard() {
               onCancel={() => setIsPostDialogOpen(false)}
               loading={blogLoading}
             />
+          </DialogContent>
+        </Dialog>
+
+        {/* Email Preview Dialog */}
+        <Dialog open={showPreview} onOpenChange={setShowPreview}>
+          <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Email Preview</DialogTitle>
+              <p className="text-sm text-gray-400 mt-1">
+                This is how your email will look to subscribers
+              </p>
+            </DialogHeader>
+            <div className="bg-white rounded-lg p-4">
+              <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button onClick={() => setShowPreview(false)} variant="outline" className="border-gray-600 text-black hover:bg-gray-100">
+                Close
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

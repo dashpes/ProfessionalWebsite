@@ -215,7 +215,7 @@ export function EditableProjectCard({
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button onClick={handleCancel} variant="outline" className="border-gray-600">
+            <Button onClick={handleCancel} variant="outline" className="border-gray-600 text-black hover:bg-gray-100">
               <X className="w-4 h-4 mr-2" />
               Cancel
             </Button>

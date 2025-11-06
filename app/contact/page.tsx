@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useState } from "react"
-import Footer from "../components/footer"
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -52,8 +51,8 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-1 container mx-auto px-4 py-16 md:py-24">
+    <div className="flex flex-col">
+      <main className="container mx-auto px-4 py-16 md:py-24">
         {/* Section Header - Following design system pattern */}
         <h1
           className="text-3xl md:text-5xl font-bold text-center mb-12"
@@ -232,7 +231,6 @@ export default function ContactPage() {
           </form>
         </div>
       </main>
-      <Footer />
     </div>
   )
 }

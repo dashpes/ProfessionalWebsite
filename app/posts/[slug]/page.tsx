@@ -3,8 +3,7 @@ import { generateMetadata as generateSEOMetadata, generateBlogPostSchema, SEO_CO
 import { PostHeader } from "../../components/post-header"
 import { PostBody } from "../../components/post-body"
 import { PostFooter } from "../../components/post-footer"
-import { Newsletter } from "../../components/newsletter"
-import Footer from "../../components/footer"
+import { NewsletterPopup } from "../../components/newsletter-popup"
 import { db, trackBlogPostView } from '@/lib/database'
 import { notFound } from 'next/navigation'
 import { headers } from 'next/headers'
@@ -120,6 +119,7 @@ export default async function PostPage({ params }: { params: { slug: string } })
 
   return (
     <div className="bg-black text-white">
+      <NewsletterPopup />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -140,8 +140,6 @@ export default async function PostPage({ params }: { params: { slug: string } })
         <PostBody content={post.content} />
         <PostFooter slug={post.slug} title={post.title} />
       </div>
-      <Newsletter />
-      <Footer />
     </div>
   )
 }

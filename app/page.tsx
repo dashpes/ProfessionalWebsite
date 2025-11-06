@@ -5,7 +5,6 @@ import ContentSection from "./components/content-section"
 import SkillsSection from "./components/skills-section"
 import GitHubStats from "./components/github-stats"
 import FeaturedProjects from "./components/featured-projects"
-import Footer from "./components/footer"
 
 export const metadata: Metadata = generateMetadata({
   title: `${SEO_CONSTANTS.AUTHOR.name} - ${SEO_CONSTANTS.AUTHOR.jobTitle} Portfolio | Orange County Developer`,
@@ -16,15 +15,14 @@ export const metadata: Metadata = generateMetadata({
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-1">
+    <div className="flex flex-col">
+      <main>
         <HeroSection />
         <ContentSection />
         <SkillsSection />
         <FeaturedProjects />
         <GitHubStats />
       </main>
-      <Footer />
     </div>
   )
 }

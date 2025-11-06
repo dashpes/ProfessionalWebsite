@@ -137,11 +137,11 @@ export default function ContentSection() {
       ref={sectionRef}
       className="container mx-auto px-4 py-16 md:py-24 flex flex-col justify-center items-center"
     >
-      <div className="w-full max-w-4xl mx-auto text-center">
-        <p className="text-lg leading-relaxed" style={{color: '#2A2A2A'}}>
+      <div className="w-full max-w-6xl mx-auto text-center">
+        <p className="text-2xl md:text-3xl font-medium leading-relaxed" style={{color: '#1A1A1A'}}>
           {displayedParagraph}
           {getCursorPosition() === "paragraph" && (
-            <span className={`inline-block w-1 h-5 md:h-6 ml-1 ${showCursor ? 'opacity-100' : 'opacity-0'}`} style={{backgroundColor: '#2A2A2A'}} />
+            <span className={`inline-block w-1 h-7 md:h-8 ml-1 ${showCursor ? 'opacity-100' : 'opacity-0'}`} style={{backgroundColor: '#1A1A1A'}} />
           )}
         </p>
       </div>

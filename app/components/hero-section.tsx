@@ -9,7 +9,7 @@ let hasPlayedInSession = false
 
 export default function HeroSection() {
   const nameText = "Daniel Ashpes"
-  const subtitleText = "Senior Software Engineer & Data Scientist"
+  const subtitleText = "Full Stack Software Engineer & Data Scientist"
 
   // State for animation
   const [displayedName, setDisplayedName] = useState("")

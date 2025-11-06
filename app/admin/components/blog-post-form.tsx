@@ -255,7 +255,7 @@ export function BlogPostForm({ post, onSave, onCancel, loading = false }: BlogPo
                     className="bg-gray-800 border-gray-600 text-white"
                     placeholder="Add keyword..."
                   />
-                  <Button type="button" onClick={addKeyword} variant="outline" size="sm">
+                  <Button type="button" onClick={addKeyword} variant="outline" size="sm" className="text-black hover:bg-gray-100">
                     Add
                   </Button>
                 </div>
@@ -362,7 +362,7 @@ export function BlogPostForm({ post, onSave, onCancel, loading = false }: BlogPo
                     <option key={cat} value={cat} />
                   ))}
                 </datalist>
-                <Button type="button" onClick={addCategory} variant="outline" size="sm">
+                <Button type="button" onClick={addCategory} variant="outline" size="sm" className="text-black hover:bg-gray-100">
                   Add
                 </Button>
               </div>
@@ -402,7 +402,7 @@ export function BlogPostForm({ post, onSave, onCancel, loading = false }: BlogPo
                     <option key={tag} value={tag} />
                   ))}
                 </datalist>
-                <Button type="button" onClick={addTag} variant="outline" size="sm">
+                <Button type="button" onClick={addTag} variant="outline" size="sm" className="text-black hover:bg-gray-100">
                   Add
                 </Button>
               </div>
@@ -427,7 +427,7 @@ export function BlogPostForm({ post, onSave, onCancel, loading = false }: BlogPo
 
       {/* Actions */}
       <div className="flex justify-end gap-4 pt-6 border-t border-gray-700">
-        <Button type="button" onClick={onCancel} variant="outline" className="border-gray-600">
+        <Button type="button" onClick={onCancel} variant="outline" className="border-gray-600 text-black hover:bg-gray-100">
           Cancel
         </Button>
         <Button type="submit" disabled={loading} className="bg-purple-600 hover:bg-purple-700">

@@ -7,7 +7,6 @@ import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Code2, Database, GraduationCap, MapPin, Sparkles } from 'lucide-react'
-import Footer from "../components/footer"
 
 const skills = [
   { name: "React/Next.js", level: 90, category: "Frontend" },
@@ -286,7 +285,7 @@ export default function AboutPage() {
   }, [])
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="relative overflow-hidden">
       {/* Floating background elements */}
       <div className="fixed inset-0 pointer-events-none">
         <div
@@ -499,7 +498,6 @@ export default function AboutPage() {
           </section>
         </AnimatedSection>
       </div>
-      <Footer />
     </div>
   )
 }
