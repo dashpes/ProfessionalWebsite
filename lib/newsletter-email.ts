@@ -1,5 +1,15 @@
 import nodemailer from 'nodemailer'
 
+// HTML escape function to prevent injection attacks
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 interface BlogPostEmailData {
   title: string
   excerpt: string
@@ -37,7 +47,7 @@ export function generateBlogPostEmail(data: BlogPostEmailData, unsubscribeToken:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${data.title}</title>
+  <title>${escapeHtml(data.title)}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -55,7 +65,7 @@ export function generateBlogPostEmail(data: BlogPostEmailData, unsubscribeToken:
           ${data.coverImage ? `
           <tr>
             <td style="padding: 0;">
-              <img src="${data.coverImage}" alt="${data.title}" style="width: 100%; height: auto; display: block; border: none;">
+              <img src="${escapeHtml(data.coverImage)}" alt="${escapeHtml(data.title)}" style="width: 100%; height: auto; display: block; border: none;">
             </td>
           </tr>
           ` : ''}
@@ -63,8 +73,8 @@ export function generateBlogPostEmail(data: BlogPostEmailData, unsubscribeToken:
           <!-- Content -->
           <tr>
             <td style="padding: 40px;">
-              <h2 style="margin: 0 0 16px; color: #2A2A2A; font-size: 24px; font-weight: bold;">${data.title}</h2>
-              <p style="margin: 0 0 24px; color: #666666; font-size: 16px; line-height: 1.6;">${data.excerpt}</p>
+              <h2 style="margin: 0 0 16px; color: #2A2A2A; font-size: 24px; font-weight: bold;">${escapeHtml(data.title)}</h2>
+              <p style="margin: 0 0 24px; color: #666666; font-size: 16px; line-height: 1.6;">${escapeHtml(data.excerpt)}</p>
 
               <!-- CTA Button -->
               <table role="presentation" style="border-collapse: collapse;">
@@ -128,7 +138,7 @@ ${data.htmlContent}
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${data.subject}</title>
+  <title>${escapeHtml(data.subject)}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -138,14 +148,14 @@ ${data.htmlContent}
           <!-- Header -->
           <tr>
             <td style="padding: 40px 40px 20px; background: linear-gradient(135deg, #5B2C91 0%, #7B3FB2 100%); border-radius: 8px 8px 0 0;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">${data.subject}</h1>
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">${escapeHtml(data.subject)}</h1>
             </td>
           </tr>
 
           <!-- Content -->
           <tr>
             <td style="padding: 40px;">
-              <div style="color: #2A2A2A; font-size: 16px; line-height: 1.6; white-space: pre-wrap;">${data.content}</div>
+              <div style="color: #2A2A2A; font-size: 16px; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(data.content)}</div>
             </td>
           </tr>
 

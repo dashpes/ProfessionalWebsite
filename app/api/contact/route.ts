@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import nodemailer from 'nodemailer'
 
+// HTML escape function to prevent injection attacks
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 interface ContactFormData {
   name: string
   email: string
@@ -71,13 +81,13 @@ export async function POST(request: NextRequest) {
                 New Contact Form Submission
               </h2>
               <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <p><strong>Name:</strong> ${body.name}</p>
-                <p><strong>Email:</strong> <a href="mailto:${body.email}">${body.email}</a></p>
-                <p><strong>Subject:</strong> ${body.subject}</p>
+                <p><strong>Name:</strong> ${escapeHtml(body.name)}</p>
+                <p><strong>Email:</strong> <a href="mailto:${escapeHtml(body.email)}">${escapeHtml(body.email)}</a></p>
+                <p><strong>Subject:</strong> ${escapeHtml(body.subject)}</p>
               </div>
               <div style="background-color: #fff; padding: 20px; border: 1px solid #e9ecef; border-radius: 8px;">
                 <p><strong>Message:</strong></p>
-                <p style="line-height: 1.6;">${body.message.replace(/\n/g, '<br>')}</p>
+                <p style="line-height: 1.6;">${escapeHtml(body.message).replace(/\n/g, '<br>')}</p>
               </div>
               <p style="color: #666; font-size: 12px; margin-top: 20px;">
                 Sent from your portfolio website contact form
@@ -116,11 +126,11 @@ Sent from your portfolio website contact form
           subject: `Portfolio Contact: ${body.subject}`,
           html: `
             <h2>New Contact Form Submission</h2>
-            <p><strong>Name:</strong> ${body.name}</p>
-            <p><strong>Email:</strong> ${body.email}</p>
-            <p><strong>Subject:</strong> ${body.subject}</p>
+            <p><strong>Name:</strong> ${escapeHtml(body.name)}</p>
+            <p><strong>Email:</strong> ${escapeHtml(body.email)}</p>
+            <p><strong>Subject:</strong> ${escapeHtml(body.subject)}</p>
             <p><strong>Message:</strong></p>
-            <p>${body.message.replace(/\n/g, '<br>')}</p>
+            <p>${escapeHtml(body.message).replace(/\n/g, '<br>')}</p>
           `,
         })
         emailSent = true
@@ -130,13 +140,9 @@ Sent from your portfolio website contact form
       }
     }
 
-    // Always log the submission (this appears in Vercel logs and your terminal)
-    console.log('📧 Contact form submission received:', {
+    // Log submission metadata only (no PII)
+    console.log('Contact form submission:', {
       timestamp: new Date().toISOString(),
-      name: body.name,
-      email: body.email,
-      subject: body.subject,
-      message: body.message,
       emailSent: emailSent ? 'Yes' : 'No (check email configuration)'
     })
 

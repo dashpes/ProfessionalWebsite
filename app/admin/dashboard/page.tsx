@@ -1468,7 +1468,12 @@ export default function AdminDashboard() {
               </p>
             </DialogHeader>
             <div className="bg-white rounded-lg p-4">
-              <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
+              <iframe
+                srcDoc={previewHtml}
+                sandbox=""
+                style={{ width: '100%', height: '500px', border: 'none' }}
+                title="Email Preview"
+              />
             </div>
             <div className="flex justify-end gap-2 mt-4">
               <Button onClick={() => setShowPreview(false)} variant="outline" className="border-gray-600 text-black hover:bg-gray-100">
