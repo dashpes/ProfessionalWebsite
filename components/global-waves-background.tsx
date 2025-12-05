@@ -8,6 +8,12 @@ export default function GlobalWavesBackground() {
   const isHomePage = pathname === "/"
   const isAboutPage = pathname === "/about"
   const isProjectsPage = pathname === "/projects"
+  const isBlogPage = pathname === "/blog" || pathname?.startsWith("/blog/")
+
+  // Don't render waves on blog pages - they have their own graph visualization
+  if (isBlogPage) {
+    return null
+  }
 
   console.log("🌊 GlobalWavesBackground: Rendering on path:", pathname, "isHomePage:", isHomePage, "isAboutPage:", isAboutPage, "isProjectsPage:", isProjectsPage)
 

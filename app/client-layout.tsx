@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner"
 import GlobalWavesBackground from "@/components/global-waves-background"
 import Footer from "./components/footer"
 import { useState, useEffect } from "react"
+import { usePathname } from "next/navigation"
 
 
 export default function ClientLayout({
@@ -15,6 +16,7 @@ export default function ClientLayout({
 }: {
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
   // Password gate disabled for production
   const [isAuthenticated, setIsAuthenticated] = useState(true) // Changed to true to bypass password
 
@@ -29,6 +31,9 @@ export default function ClientLayout({
     sessionStorage.setItem("authenticated", "true")
     setIsAuthenticated(true)
   }
+
+  // Hide footer on blog page (mind cloud takes full screen)
+  const isBlogPage = pathname === "/blog"
 
   // Temporarily disable password gate - can be re-enabled by changing isAuthenticated to false above
   if (!isAuthenticated && false) { // Added "&& false" to disable
@@ -49,7 +54,7 @@ export default function ClientLayout({
         <div className="relative z-10">
           <NavigationDropdown />
           {children}
-          <Footer />
+          {!isBlogPage && <Footer />}
           <Toaster />
         </div>
       </div>

@@ -2,6 +2,45 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db, logAdminActivity, getClientIP } from '@/lib/database'
 import { verifyAdminToken } from '@/lib/auth'
 import { BlogPostStatus } from '@prisma/client'
+import { extractBacklinks } from '@/lib/backlink-parser'
+
+/**
+ * Update backlinks for a post by parsing its content
+ */
+async function updateBacklinks(postId: string, content: string, slug: string): Promise<void> {
+  try {
+    // Extract slugs from the content
+    const linkedSlugs = extractBacklinks(content, slug)
+
+    // Delete existing outgoing links
+    await db.blogPostLink.deleteMany({
+      where: { sourcePostId: postId }
+    })
+
+    // Find posts that match the linked slugs
+    if (linkedSlugs.length > 0) {
+      const linkedPosts = await db.blogPost.findMany({
+        where: {
+          slug: { in: linkedSlugs }
+        },
+        select: { id: true, slug: true }
+      })
+
+      // Create new links
+      for (const linkedPost of linkedPosts) {
+        await db.blogPostLink.create({
+          data: {
+            sourcePostId: postId,
+            targetPostId: linkedPost.id,
+            linkType: 'BACKLINK'
+          }
+        })
+      }
+    }
+  } catch (error) {
+    console.error('Failed to update backlinks:', error)
+  }
+}
 
 function calculateReadingTime(content: string): number {
   const wordsPerMinute = 200
@@ -272,6 +311,9 @@ export async function POST(request: NextRequest) {
         })
       }
     }
+
+    // Extract and store backlinks
+    await updateBacklinks(post.id, content, slug)
 
     // Log admin activity
     await logAdminActivity(

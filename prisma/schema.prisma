@@ -96,6 +96,8 @@ model BlogPost {
   categories         BlogPostCategory[]
   tags               BlogPostTag[]
   views              BlogPostView[]
+  outgoingLinks      BlogPostLink[]     @relation("SourceLinks")
+  incomingLinks      BlogPostLink[]     @relation("TargetLinks")
 
   @@index([status])
   @@index([publishedAt])
@@ -192,6 +194,29 @@ model BlogPostView {
   @@index([viewedAt])
   @@index([country])
   @@map("blog_post_views")
+}
+
+model BlogPostLink {
+  id           String   @id @default(cuid())
+  sourcePostId String   @map("source_post_id")
+  targetPostId String   @map("target_post_id")
+  linkType     LinkType @default(BACKLINK)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  sourcePost BlogPost @relation("SourceLinks", fields: [sourcePostId], references: [id], onDelete: Cascade)
+  targetPost BlogPost @relation("TargetLinks", fields: [targetPostId], references: [id], onDelete: Cascade)
+
+  @@unique([sourcePostId, targetPostId])
+  @@index([sourcePostId])
+  @@index([targetPostId])
+  @@map("blog_post_links")
+}
+
+enum LinkType {
+  BACKLINK
+
+  @@map("link_type")
 }
 
 model GitHubSyncLog {
