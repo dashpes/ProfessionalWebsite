@@ -164,6 +164,14 @@ export async function PUT(
       publishedAt
     } = body
 
+    // Validate required fields are not being cleared
+    if (title !== undefined && !title.trim()) {
+      return NextResponse.json({ error: 'Title cannot be empty' }, { status: 400 })
+    }
+    if (content !== undefined && !content.trim()) {
+      return NextResponse.json({ error: 'Content cannot be empty' }, { status: 400 })
+    }
+
     // Update slug if title changed
     let slug = existingPost.slug
     if (title && title !== existingPost.title) {

@@ -247,7 +247,7 @@ export async function POST(request: NextRequest) {
         metaDescription: metaDescription || excerpt || title.substring(0, 160),
         keywords,
         readingTimeMinutes,
-        publishedAt: status === 'PUBLISHED' && publishedAt ? new Date(publishedAt) :
+        publishedAt: (status === 'PUBLISHED' || status === 'SCHEDULED') && publishedAt ? new Date(publishedAt) :
                     status === 'PUBLISHED' ? new Date() : null
       },
       include: {

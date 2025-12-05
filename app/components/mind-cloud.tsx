@@ -42,6 +42,7 @@ interface BlogPost {
   title: string
   content: string
   excerpt: string
+  coverImage?: string | null
   publishedAt: string
   readingTimeMinutes: number
   viewCount: number
@@ -184,14 +185,6 @@ export function MindCloud({ className = '' }: MindCloudProps) {
   const drawRef = useRef<() => void>(() => {})
   const focusedNodeRef = useRef<string | null>(null)
 
-  // Category colors
-  const CATEGORY_COLORS: Record<string, string> = {
-    'Software': '#5B2C91',      // Royal Purple
-    'Data Science': '#2E86AB',  // Blue
-    'Projects': '#A23B72',      // Magenta/Pink
-    'default': '#6B7280'        // Gray fallback
-  }
-
   // Draw function - stored in ref so simulation can access latest version
   const draw = useCallback(() => {
     const canvas = canvasRef.current
@@ -250,7 +243,7 @@ export function MindCloud({ className = '' }: MindCloudProps) {
 
       // Label below the dot - scale font size based on title length
       const labelLength = node.label.length
-      let baseFontSize = node.type === 'center' ? 14 : node.type === 'topic' ? 12 : 11
+      const baseFontSize = node.type === 'center' ? 14 : node.type === 'topic' ? 12 : 11
 
       // Scale down font size for longer titles
       let fontSize = baseFontSize
@@ -897,6 +890,17 @@ export function MindCloud({ className = '' }: MindCloudProps) {
                 </div>
               ) : selectedPost ? (
                 <article className="p-6">
+                  {/* Cover Image */}
+                  {selectedPost.coverImage && (
+                    <div className="relative w-full h-48 md:h-64 rounded-xl overflow-hidden mb-6">
+                      <img
+                        src={selectedPost.coverImage}
+                        alt={selectedPost.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
                   {/* Category & Tags */}
                   {selectedPost.category && (
                     <div className="mb-4">

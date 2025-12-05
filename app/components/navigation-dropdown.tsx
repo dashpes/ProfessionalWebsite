@@ -12,7 +12,7 @@ export default function NavigationDropdown() {
           <Button
             variant="outline"
             size="icon"
-            className="h-12 w-12 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300"
+            className="h-12 w-12 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-white/90 backdrop-blur-sm transition-all duration-300"
           >
             <MenuIcon className="h-6 w-6" />
             <span className="sr-only">Toggle navigation menu</span>
