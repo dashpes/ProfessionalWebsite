@@ -12,7 +12,7 @@ export default function NavigationDropdown() {
           <Button
             variant="outline"
             size="icon"
-            className="h-12 w-12 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-white/90 backdrop-blur-sm transition-all duration-300"
+            className="h-12 w-12 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300"
           >
             <MenuIcon className="h-6 w-6" />
             <span className="sr-only">Toggle navigation menu</span>
@@ -20,12 +20,20 @@ export default function NavigationDropdown() {
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
-          className="bg-white/15 backdrop-blur-[12px] border-white/30 shadow-lg shadow-[#5B2C91]/15 mt-2"
+          className="mt-2"
+          style={{
+            background: 'rgba(255, 255, 255, 0.75)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '20px',
+            boxShadow: '0 8px 32px rgba(91, 44, 145, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
+          }}
         >
           <DropdownMenuItem asChild>
             <Link
               href="/"
-              className="text-[#2A2A2A] hover:bg-white/20 hover:text-[#5B2C91] transition-colors font-medium"
+              className="text-[#5B2C91] hover:bg-purple-100/50 hover:text-[#3D1D61] transition-colors font-medium"
             >
               Home
             </Link>
@@ -33,7 +41,7 @@ export default function NavigationDropdown() {
           <DropdownMenuItem asChild>
             <Link
               href="/about"
-              className="text-[#2A2A2A] hover:bg-white/20 hover:text-[#5B2C91] transition-colors font-medium"
+              className="text-[#5B2C91] hover:bg-purple-100/50 hover:text-[#3D1D61] transition-colors font-medium"
             >
               About
             </Link>
@@ -41,7 +49,7 @@ export default function NavigationDropdown() {
           <DropdownMenuItem asChild>
             <Link
               href="/projects"
-              className="text-[#2A2A2A] hover:bg-white/20 hover:text-[#5B2C91] transition-colors font-medium"
+              className="text-[#5B2C91] hover:bg-purple-100/50 hover:text-[#3D1D61] transition-colors font-medium"
             >
               Projects
             </Link>
@@ -49,7 +57,7 @@ export default function NavigationDropdown() {
           <DropdownMenuItem asChild>
             <Link
               href="/blog"
-              className="text-[#2A2A2A] hover:bg-white/20 hover:text-[#5B2C91] transition-colors font-medium"
+              className="text-[#5B2C91] hover:bg-purple-100/50 hover:text-[#3D1D61] transition-colors font-medium"
             >
               Blog
             </Link>
@@ -57,7 +65,7 @@ export default function NavigationDropdown() {
           <DropdownMenuItem asChild>
             <Link
               href="/contact"
-              className="text-[#2A2A2A] hover:bg-white/20 hover:text-[#5B2C91] transition-colors font-medium"
+              className="text-[#5B2C91] hover:bg-purple-100/50 hover:text-[#3D1D61] transition-colors font-medium"
             >
               Contact
             </Link>
