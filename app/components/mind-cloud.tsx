@@ -7,12 +7,31 @@ import {
   forceManyBody,
   forceCenter,
   forceCollide,
+  forceRadial,
+  forceX,
+  forceY,
   SimulationNodeDatum,
   SimulationLinkDatum,
   Simulation
 } from 'd3-force'
-import { ArrowLeft, Heart, Share2, Calendar, Clock } from 'lucide-react'
+import { ArrowLeft, Heart, Share2, Calendar, Clock, Star, GitFork, Code, ExternalLink, Github } from 'lucide-react'
 import 'highlight.js/styles/vs2015.css'
+
+interface ProjectData {
+  id: string
+  title: string
+  description: string | null
+  imageUrl: string | null
+  githubUrl: string | null
+  liveUrl: string | null
+  category: string | null
+  starsCount: number
+  forksCount: number
+  primaryLanguage: string | null
+  viewCount: number
+  likeCount: number
+  technologyNames: string[]
+}
 
 interface GraphNode extends SimulationNodeDatum {
   id: string
@@ -21,6 +40,8 @@ interface GraphNode extends SimulationNodeDatum {
   type: 'center' | 'topic' | 'post'
   color: string
   size: number
+  isProject?: boolean
+  projectData?: ProjectData
   // Explicitly include d3-force properties
   x?: number
   y?: number
@@ -75,6 +96,9 @@ export function MindCloud({ className = '' }: MindCloudProps) {
   const [categoryPosts, setCategoryPosts] = useState<BlogPost[]>([])
   const [categoryLoading, setCategoryLoading] = useState(false)
 
+  // Project state
+  const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null)
+
   // Mobile detection
   const [isMobile, setIsMobile] = useState(false)
 
@@ -90,6 +114,7 @@ export function MindCloud({ className = '' }: MindCloudProps) {
   // Open post in side panel
   const openPost = async (slug: string) => {
     setSelectedCategory(null) // Clear category view
+    setSelectedProject(null) // Clear project view
     setCategoryPosts([])
     setPostLoading(true)
     setIsPanelOpen(true)
@@ -107,12 +132,29 @@ export function MindCloud({ className = '' }: MindCloudProps) {
     }
   }
 
+  // Open project in side panel
+  const openProject = (projectData: ProjectData) => {
+    setSelectedPost(null)
+    setSelectedCategory(null)
+    setCategoryPosts([])
+    setSelectedProject(projectData)
+    setIsPanelOpen(true)
+
+    // Track view
+    fetch(`/api/projects/${projectData.id}/view`, { method: 'POST' }).catch(() => {})
+  }
+
   // Open category in side panel
   const openCategory = async (categoryName: string) => {
     setSelectedPost(null) // Clear post view
+    setSelectedProject(null) // Clear project view
     setCategoryLoading(true)
     setSelectedCategory(categoryName)
     setIsPanelOpen(true)
+
+    // List of programming languages for subcategory detection
+    const knownLanguages = ['python', 'javascript', 'typescript', 'java', 'go', 'rust', 'c++', 'c#', 'ruby', 'swift', 'kotlin', 'php']
+    const isLanguageSubcategory = knownLanguages.includes(categoryName.toLowerCase())
 
     try {
       // Fetch all posts and filter by category
@@ -121,9 +163,15 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         const data = await res.json()
         // Filter posts by category and sort by date (newest first)
         const posts = (data.nodes || [])
-          .filter((post: { categoryName: string | null }) => {
+          .filter((post: { categoryName: string | null; isProject?: boolean; projectData?: ProjectData }) => {
             const postCat = post.categoryName?.toLowerCase() || ''
             const targetCat = categoryName.toLowerCase()
+
+            // If clicking a language subcategory, filter projects by that language
+            if (isLanguageSubcategory) {
+              return post.isProject && post.projectData?.primaryLanguage?.toLowerCase() === targetCat
+            }
+
             if (targetCat === 'software') {
               return postCat.includes('software') || postCat.includes('engineering')
             }
@@ -149,30 +197,44 @@ export function MindCloud({ className = '' }: MindCloudProps) {
 
   // Close panel
   const closePanel = () => {
-    setIsPanelOpen(false)
+    // First, restore all nodes to their original full-width positions
+    const originalPositions = originalNodePositionsRef.current
+    if (originalPositions.size > 0) {
+      nodesRef.current.forEach(node => {
+        const original = originalPositions.get(node.id)
+        if (original) {
+          node.x = original.x
+          node.fx = original.fx
+          node.y = original.y
+          node.fy = original.fy
+        }
+      })
+    }
+
+    // Clear focused node reference
+    focusedNodeRef.current = null
+
+    // Reset the original center ref to full width
+    if (originalCenterRef.current) {
+      originalCenterRef.current = { x: window.innerWidth / 2, y: originalCenterRef.current.y }
+    }
 
     // Reset view to center on whole graph
     setTransform({ x: 0, y: 0, k: 1 })
 
-    // Release the fixed node so it can float again
-    if (focusedNodeRef.current) {
-      const focusedNode = nodesRef.current.find(n => n.id === focusedNodeRef.current)
-      if (focusedNode) {
-        focusedNode.fx = null
-        focusedNode.fy = null
-      }
-      focusedNodeRef.current = null
-    }
+    // Close panel - this triggers the resize effect
+    setIsPanelOpen(false)
 
-    // Reheat simulation so nodes start moving
+    // Gently reheat simulation for ambient motion (low alpha)
     const simulation = simulationRef.current
     if (simulation) {
-      simulation.alpha(0.3).restart()
+      simulation.alpha(0.1).alphaTarget(0.02).restart()
     }
 
     setTimeout(() => {
       setSelectedPost(null)
       setSelectedCategory(null)
+      setSelectedProject(null)
       setCategoryPosts([])
     }, 300) // Clear after animation
   }
@@ -196,6 +258,8 @@ export function MindCloud({ className = '' }: MindCloudProps) {
   const simulationRef = useRef<Simulation<GraphNode, GraphLink> | null>(null)
   const drawRef = useRef<() => void>(() => {})
   const focusedNodeRef = useRef<string | null>(null)
+  // Store original node positions (full-width canvas) for proper reset
+  const originalNodePositionsRef = useRef<Map<string, { x: number; y: number; fx: number | null; fy: number | null }>>(new Map())
 
   // Draw function - stored in ref so simulation can access latest version
   const draw = useCallback(() => {
@@ -234,8 +298,8 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       if (node.x === undefined || node.y === undefined) return
 
       const isHovered = hoveredNode?.id === node.id
-      // Smaller node sizes like Obsidian
-      const dotSize = node.type === 'center' ? 12 : node.type === 'topic' ? 8 : 6
+      // Use hierarchical node sizes from data
+      const dotSize = node.size
 
       // Glow effect for hovered
       if (isHovered) {
@@ -251,62 +315,64 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       ctx.fillStyle = node.color
       ctx.fill()
 
-      // Label below the dot - scale font size based on title length
-      const labelLength = node.label.length
-      const baseFontSize = node.type === 'center' ? 14 : node.type === 'topic' ? 12 : 11
+      // Label below the dot
+      if (node.label && node.label.length > 0) {
+        const labelLength = node.label.length
+        const baseFontSize = node.type === 'center' ? 14 : node.type === 'topic' ? 12 : 11
 
-      // Scale down font size for longer titles
-      let fontSize = baseFontSize
-      if (labelLength > 50) {
-        fontSize = Math.max(8, baseFontSize - 4)
-      } else if (labelLength > 40) {
-        fontSize = Math.max(9, baseFontSize - 3)
-      } else if (labelLength > 30) {
-        fontSize = Math.max(9, baseFontSize - 2)
-      } else if (labelLength > 20) {
-        fontSize = Math.max(10, baseFontSize - 1)
-      }
-
-      ctx.font = `${fontSize}px system-ui, -apple-system, sans-serif`
-      ctx.fillStyle = isHovered ? '#FFFFFF' : 'rgba(255, 255, 255, 0.85)'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'top'
-
-      // Wrap text to multiple lines (max 3 lines)
-      const maxLineWidth = 120
-      const words = node.label.split(' ')
-      const lines: string[] = []
-      let currentLine = ''
-
-      for (const word of words) {
-        const testLine = currentLine ? `${currentLine} ${word}` : word
-        const testWidth = ctx.measureText(testLine).width
-
-        if (testWidth <= maxLineWidth) {
-          currentLine = testLine
-        } else {
-          if (currentLine) lines.push(currentLine)
-          currentLine = word
+        // Scale down font size for longer titles
+        let fontSize = baseFontSize
+        if (labelLength > 50) {
+          fontSize = Math.max(8, baseFontSize - 4)
+        } else if (labelLength > 40) {
+          fontSize = Math.max(9, baseFontSize - 3)
+        } else if (labelLength > 30) {
+          fontSize = Math.max(9, baseFontSize - 2)
+        } else if (labelLength > 20) {
+          fontSize = Math.max(10, baseFontSize - 1)
         }
-      }
-      if (currentLine) lines.push(currentLine)
 
-      // Limit to 3 lines, truncate last line if needed
-      const displayLines = lines.slice(0, 3)
-      if (lines.length > 3) {
-        let lastLine = displayLines[2]
-        while (ctx.measureText(lastLine + '...').width > maxLineWidth && lastLine.length > 3) {
-          lastLine = lastLine.substring(0, lastLine.length - 1)
+        ctx.font = `${fontSize}px system-ui, -apple-system, sans-serif`
+        ctx.fillStyle = isHovered ? '#FFFFFF' : 'rgba(255, 255, 255, 0.85)'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'top'
+
+        // Wrap text to multiple lines (max 3 lines)
+        const maxLineWidth = 120
+        const words = node.label.split(' ')
+        const lines: string[] = []
+        let currentLine = ''
+
+        for (const word of words) {
+          const testLine = currentLine ? `${currentLine} ${word}` : word
+          const testWidth = ctx.measureText(testLine).width
+
+          if (testWidth <= maxLineWidth) {
+            currentLine = testLine
+          } else {
+            if (currentLine) lines.push(currentLine)
+            currentLine = word
+          }
         }
-        displayLines[2] = lastLine + '...'
-      }
+        if (currentLine) lines.push(currentLine)
 
-      // Draw each line centered
-      const lineHeight = fontSize * 1.3
-      const startY = node.y + dotSize + 6
-      displayLines.forEach((line, i) => {
-        ctx.fillText(line, node.x, startY + i * lineHeight)
-      })
+        // Limit to 3 lines, truncate last line if needed
+        const displayLines = lines.slice(0, 3)
+        if (lines.length > 3) {
+          let lastLine = displayLines[2]
+          while (ctx.measureText(lastLine + '...').width > maxLineWidth && lastLine.length > 3) {
+            lastLine = lastLine.substring(0, lastLine.length - 1)
+          }
+          displayLines[2] = lastLine + '...'
+        }
+
+        // Draw each line centered
+        const lineHeight = fontSize * 1.3
+        const startY = node.y + dotSize + 6
+        displayLines.forEach((line, i) => {
+          ctx.fillText(line, node.x!, startY + i * lineHeight)
+        })
+      }
     })
 
     ctx.restore()
@@ -363,20 +429,20 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           return '#6B7280' // Gray fallback
         }
 
-        // Center "Blog" node
+        // Center node (blank label - just the dot)
         nodes.push({
           id: 'blog-center',
-          label: 'Blog',
+          label: '',
           type: 'center',
           color: '#FFFFFF',
-          size: 50,
+          size: 8,
           x: width / 2,
           y: height / 2,
           fx: width / 2,
           fy: height / 2
         })
 
-        // Category nodes (Software, Data Science, Projects)
+        // Category nodes (Software, Data Science, Projects) - FIXED at exact 120° intervals
         const categoryColors: Record<string, string> = {
           'Software': '#5B2C91',
           'Data Science': '#2E86AB',
@@ -384,64 +450,157 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         }
 
         const mainCategories = ['Software', 'Data Science', 'Projects']
-        mainCategories.forEach((catName) => {
+        const categoryRadius = Math.min(width, height) * 0.28 // Distance from center
+
+        // Store category positions for later use with subcategories
+        const categoryPositions: Record<string, { x: number; y: number; angle: number }> = {}
+
+        mainCategories.forEach((catName, index) => {
+          // Position at 120° intervals (0°, 120°, 240°), starting from top
+          const angle = (index * (2 * Math.PI / 3)) - (Math.PI / 2) // Start from top
+          const catX = width / 2 + Math.cos(angle) * categoryRadius
+          const catY = height / 2 + Math.sin(angle) * categoryRadius
+
+          categoryPositions[catName] = { x: catX, y: catY, angle }
+
           nodes.push({
             id: `cat-${catName.toLowerCase().replace(' ', '-')}`,
             label: catName,
             type: 'topic',
             color: categoryColors[catName],
-            size: 35
+            size: 8,
+            x: catX,
+            y: catY,
+            fx: catX, // FIXED position - categories won't move
+            fy: catY
           })
           links.push({
             source: 'blog-center',
             target: `cat-${catName.toLowerCase().replace(' ', '-')}`,
-            strength: 0.8
+            strength: 1.0 // Strong link to keep categories connected to center
           })
         })
 
-        // Post nodes - connect to their category
-        console.log('MindCloud: Posts', data.nodes)
+        // First pass: collect all unique languages for project subcategories
+        const projectLanguages = new Set<string>()
+        const projectsByLanguage: Record<string, string[]> = {}
+
+        ;(data.nodes || []).forEach((post: {
+          id: string
+          isProject?: boolean
+          projectData?: ProjectData
+        }) => {
+          if (post.isProject && post.projectData?.primaryLanguage) {
+            const lang = post.projectData.primaryLanguage
+            projectLanguages.add(lang)
+            if (!projectsByLanguage[lang]) projectsByLanguage[lang] = []
+            projectsByLanguage[lang].push(post.id)
+          }
+        })
+
+        // Create language subcategory nodes for Projects
+        // All language nodes use the same color as Projects category for consistency
+        const LANGUAGE_NODE_COLOR = '#C44B8C' // Lighter magenta, similar to Projects
+
+        const projectsPos = categoryPositions['Projects']
+        const subCategoryRadius = categoryRadius * 0.5 // Distance from Projects node
+        const languageArray = Array.from(projectLanguages)
+
+        languageArray.forEach((lang, index) => {
+          // Start at center for explosion effect - simulation will push to final position
+          nodes.push({
+            id: `lang-${lang.toLowerCase()}`,
+            label: lang,
+            type: 'topic', // Subcategory type
+            color: LANGUAGE_NODE_COLOR, // Same color for all language nodes
+            size: 8,
+            x: width / 2 + (Math.random() - 0.5) * 10, // Slight random offset to avoid overlap
+            y: height / 2 + (Math.random() - 0.5) * 10
+            // Language nodes are NOT fixed - they float to be attracted to connected categories
+          })
+
+          // Link language node to Projects category
+          links.push({
+            source: 'cat-projects',
+            target: `lang-${lang.toLowerCase()}`,
+            strength: 0.9
+          })
+        })
+
+        // Post/Project nodes - connect to their category or language subcategory
+        // Initialize positions NEAR their parent category for better initial layout
+        console.log('MindCloud: Posts and Projects', data.nodes)
         ;(data.nodes || []).forEach((post: {
           id: string
           slug: string
           title: string
           categoryId: string | null
           categoryName: string | null
-        }) => {
+          isProject?: boolean
+          projectData?: ProjectData
+        }, index: number) => {
           const categoryName = post.categoryName || ''
           const color = getCategoryColor(categoryName)
+
+          // Determine parent category for initial positioning
+          let parentPos = categoryPositions['Software'] // default
+          let targetCategory = 'cat-software'
+
+          if (categoryName.toLowerCase().includes('data')) {
+            parentPos = categoryPositions['Data Science']
+            targetCategory = 'cat-data-science'
+          } else if (categoryName.toLowerCase().includes('project')) {
+            parentPos = categoryPositions['Projects']
+            // Projects connect to their language subcategory if available
+            if (post.isProject && post.projectData?.primaryLanguage) {
+              targetCategory = `lang-${post.projectData.primaryLanguage.toLowerCase()}`
+            } else {
+              targetCategory = 'cat-projects'
+            }
+          } else if (categoryName.toLowerCase().includes('software') || categoryName.toLowerCase().includes('engineering')) {
+            parentPos = categoryPositions['Software']
+            targetCategory = 'cat-software'
+          }
+
+          // Start at center for explosion effect - simulation will push to final position
           nodes.push({
             id: post.id,
             slug: post.slug,
             label: post.title,
             type: 'post',
             color: color,
-            size: 28
+            size: 8,
+            isProject: post.isProject,
+            projectData: post.projectData,
+            x: width / 2 + (Math.random() - 0.5) * 10, // Slight random offset to avoid overlap
+            y: height / 2 + (Math.random() - 0.5) * 10
           })
-
-          // Link to appropriate category node
-          let targetCategory = 'cat-software' // default
-          if (categoryName.toLowerCase().includes('data')) {
-            targetCategory = 'cat-data-science'
-          } else if (categoryName.toLowerCase().includes('project')) {
-            targetCategory = 'cat-projects'
-          } else if (categoryName.toLowerCase().includes('software') || categoryName.toLowerCase().includes('engineering')) {
-            targetCategory = 'cat-software'
-          }
 
           links.push({
             source: targetCategory,
             target: post.id,
-            strength: 0.6
+            strength: 1.0 // Very strong link to parent category
           })
         })
 
-        // Post-to-post backlinks
-        ;(data.links || []).forEach((link: { source: string; target: string }) => {
+        // Post-to-post backlinks and shared tag connections - stronger to cluster related content
+        // Filter out project-to-project connections (they connect via language nodes instead)
+        const projectNodeIds = new Set(
+          (data.nodes || [])
+            .filter((n: { isProject?: boolean }) => n.isProject)
+            .map((n: { id: string }) => n.id)
+        )
+
+        ;(data.links || []).forEach((link: { source: string; target: string; strength?: number }) => {
+          // Skip if both source and target are projects
+          if (projectNodeIds.has(link.source) && projectNodeIds.has(link.target)) {
+            return // Projects connect via language nodes, not directly
+          }
+
           links.push({
             source: link.source,
             target: link.target,
-            strength: 0.4
+            strength: (link.strength || 1) * 0.9 // Strong attraction for connected nodes
           })
         })
 
@@ -450,20 +609,77 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         nodesRef.current = nodes
         linksRef.current = links
 
-        // Create simulation
+        // Create simulation with hierarchical radial layout
+        // Categories are FIXED (fx/fy) - only posts move
+        // Link distances: longer near center, shorter at edges
         const simulation = forceSimulation<GraphNode>(nodes)
           .force('link', forceLink<GraphNode, GraphLink>(links)
             .id(d => d.id)
-            .distance(120)
-            .strength(d => d.strength))
-          .force('charge', forceManyBody().strength(-300))
-          .force('center', forceCenter(width / 2, height / 2))
-          .force('collision', forceCollide<GraphNode>().radius(d => d.size + 20))
+            .distance((d) => {
+              const source = d.source as GraphNode
+              const target = d.target as GraphNode
+
+              // Blog center → main category: LONGEST
+              if (source.id === 'blog-center' || target.id === 'blog-center') {
+                return 150
+              }
+              // Main category → language subcategory: MEDIUM
+              if ((source.id.startsWith('cat-') && target.id.startsWith('lang-')) ||
+                  (target.id.startsWith('cat-') && source.id.startsWith('lang-'))) {
+                return 80
+              }
+              // Category/Language → post: MEDIUM-SHORT
+              if (source.type === 'topic' || target.type === 'topic') {
+                return 70
+              }
+              // Post to post (shared tags): SHORT - cluster together
+              return 40
+            })
+            .strength((d) => {
+              // VERY strong links - connected nodes MUST stay together
+              const str = (d as GraphLink).strength || 0.5
+              return Math.min(str * 2.0, 1.0) // Strong but capped at 1.0
+            }))
+          .force('charge', forceManyBody<GraphNode>()
+            .strength((d) => {
+              // Fixed nodes (main categories, blog center) don't need charge
+              if (d.fx !== undefined && d.fx !== null) return 0
+              // Language nodes repel slightly to spread out
+              if (d.id.startsWith('lang-')) return -60
+              // Posts repel moderately to spread out more
+              return -50
+            }))
+          // Radial force pushes nodes OUTWARD from center based on hierarchy
+          .force('radial', forceRadial<GraphNode>(
+            (d) => {
+              // Language nodes at medium distance
+              if (d.id.startsWith('lang-')) {
+                return categoryRadius * 1.3
+              }
+              // Posts at outer ring
+              if (d.type === 'post') {
+                return categoryRadius * 1.8
+              }
+              return 0
+            },
+            width / 2,
+            height / 2
+          ).strength((d) => {
+            if (d.id.startsWith('lang-')) return 0.2 // Medium push for language nodes
+            if (d.type === 'post') return 0.1 // Gentle push for posts
+            return 0
+          }))
+          .force('collision', forceCollide<GraphNode>().radius(d => {
+            // Small collision to prevent node overlap, not text overlap
+            if (d.type === 'post') return 20
+            if (d.id.startsWith('lang-')) return 15
+            return 0
+          }).strength(0.8))
 
         simulationRef.current = simulation
 
         simulation.on('tick', () => {
-          // Apply very subtle ambient floating motion
+          // Apply extremely subtle ambient floating motion
           const time = Date.now() * 0.001 // Time in seconds
 
           nodesRef.current.forEach((node, i) => {
@@ -472,27 +688,27 @@ export function MindCloud({ className = '' }: MindCloudProps) {
 
             // Each node gets a unique phase based on its index
             const phase = i * 2.3
-            const floatStrength = 0.08 // Very subtle movement
+            const floatStrength = 0.015 // Barely perceptible movement
 
-            // Gentle oscillation - add small displacement, not velocity
-            // This keeps nodes in their area instead of drifting
-            const offsetX = Math.sin(time * 0.3 + phase) * floatStrength
-            const offsetY = Math.cos(time * 0.25 + phase * 0.8) * floatStrength
+            // Very gentle oscillation
+            const offsetX = Math.sin(time * 0.15 + phase) * floatStrength
+            const offsetY = Math.cos(time * 0.12 + phase * 0.8) * floatStrength
 
-            node.vx = (node.vx || 0) * 0.95 + offsetX // Dampen existing velocity
-            node.vy = (node.vy || 0) * 0.95 + offsetY
+            node.vx = (node.vx || 0) * 0.9 + offsetX // Strong dampening
+            node.vy = (node.vy || 0) * 0.9 + offsetY
           })
 
           drawRef.current()
         })
 
-        // Run simulation initially
-        simulation.alpha(1).restart()
+        // Run simulation with high energy for explosion effect
+        // Slower decay (0.015) makes the explosion animation last longer
+        simulation.alpha(1).alphaDecay(0.015).restart()
 
-        // After initial settle, keep simulation running with gentle energy
+        // After initial explosion settles, keep simulation nearly still with minimal energy
         setTimeout(() => {
-          simulation.alphaMin(0).alphaDecay(0.01).alphaTarget(0.03).restart()
-        }, 3000)
+          simulation.alphaMin(0).alphaDecay(0.02).alphaTarget(0.005).restart()
+        }, 4000)
 
         setInitialized(true)
         setLoading(false)
@@ -600,37 +816,22 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           focusedNodeRef.current = node.id
 
           if (node.type === 'post' && node.slug) {
-            // Pan/zoom to focus on this node in its natural position
-            // The new canvas will be 50% width after panel opens
-            const newCanvasWidth = window.innerWidth / 2
-            const newCenterX = newCanvasWidth / 2
-            const newCenterY = canvas.height / 2
-
             // Fix the node in place so it doesn't drift while reading
             node.fx = node.x
             node.fy = node.y
 
-            // Calculate transform to center on this node's current position
-            const newZoom = 1.8
-            const panX = (newCenterX - node.x) * newZoom
-            const panY = (newCenterY - node.y) * newZoom
+            // Don't set transform here - let the panel open effect handle it
+            // The transform will be calculated AFTER the canvas resizes
 
-            setTransform({ x: panX, y: panY, k: newZoom })
-
-            openPost(node.slug)
+            // Check if this is a project node
+            if (node.isProject && node.projectData) {
+              openProject(node.projectData)
+            } else {
+              openPost(node.slug)
+            }
           } else if (node.type === 'topic') {
-            const newCanvasWidth = window.innerWidth / 2
-            const newCenterX = newCanvasWidth / 2
-            const newCenterY = canvas.height / 2
-
             node.fx = node.x
             node.fy = node.y
-
-            const newZoom = 1.8
-            const panX = (newCenterX - node.x) * newZoom
-            const panY = (newCenterY - node.y) * newZoom
-
-            setTransform({ x: panX, y: panY, k: newZoom })
 
             openCategory(node.label)
           }
@@ -755,7 +956,12 @@ export function MindCloud({ className = '' }: MindCloudProps) {
             if (node.type === 'post' && node.slug) {
               node.fx = node.x
               node.fy = node.y
-              openPost(node.slug)
+              // Check if this is a project node
+              if (node.isProject && node.projectData) {
+                openProject(node.projectData)
+              } else {
+                openPost(node.slug)
+              }
             } else if (node.type === 'topic') {
               node.fx = node.x
               node.fy = node.y
@@ -810,10 +1016,35 @@ export function MindCloud({ className = '' }: MindCloudProps) {
     const container = containerRef.current
     if (!canvas || !container || !initialized) return
 
-    // Wait for CSS transition to complete (300ms)
-    const shiftNodes = () => {
-      const fullWidth = window.innerWidth
-      const newContainerWidth = isPanelOpen ? fullWidth / 2 : fullWidth
+    const fullWidth = window.innerWidth
+    const newContainerWidth = isPanelOpen ? fullWidth / 2 : fullWidth
+
+    // When panel is OPENING, store original positions before shifting
+    if (isPanelOpen && originalNodePositionsRef.current.size === 0) {
+      nodesRef.current.forEach(node => {
+        originalNodePositionsRef.current.set(node.id, {
+          x: node.x ?? 0,
+          y: node.y ?? 0,
+          fx: node.fx ?? null,
+          fy: node.fy ?? null
+        })
+      })
+    }
+
+    // When panel is CLOSING, just resize canvas - positions already restored in closePanel
+    if (!isPanelOpen) {
+      // Clear stored positions since we're back to full width
+      originalNodePositionsRef.current.clear()
+
+      // Just update canvas size
+      canvas.width = newContainerWidth
+      canvas.height = container.clientHeight
+      drawRef.current()
+      return
+    }
+
+    // Panel is opening - shift nodes to new center
+    const shiftNodes = (applyFocusTransform: boolean) => {
       const newCenterX = newContainerWidth / 2
       const newCenterY = container.clientHeight / 2
 
@@ -825,32 +1056,22 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       const oldCenterX = originalCenterRef.current.x
       const shiftX = newCenterX - oldCenterX
 
-      // Shift node positions only when NOT focused (normal open/close without selection)
+      // Shift nodes to new center
       const focusedId = focusedNodeRef.current
-
-      if (!focusedId) {
-        // Normal panel open/close - shift all nodes to re-center
-        nodesRef.current.forEach(node => {
-          if (typeof node.x === 'number') {
-            node.x += shiftX
-          }
-          if (node.fx !== null && node.fx !== undefined) {
-            node.fx += shiftX
-          }
-          // Keep Blog node centered
-          if (node.id === 'blog-center') {
-            node.fx = newCenterX
-            node.fy = newCenterY
-          }
-        })
-      } else {
-        // Focused mode - release Blog node to float naturally
-        const blogNode = nodesRef.current.find(n => n.id === 'blog-center')
-        if (blogNode) {
-          blogNode.fx = null
-          blogNode.fy = null
+      nodesRef.current.forEach(node => {
+        // Don't shift the currently focused node - keep it where the user clicked
+        if (focusedId && node.id === focusedId) {
+          return
         }
-      }
+        // Shift fixed nodes (categories, center) - they stay fixed but at new positions
+        if (node.fx !== null && node.fx !== undefined) {
+          node.fx += shiftX
+          node.x = node.fx // Keep x in sync with fx
+        } else if (node.type === 'post' && typeof node.x === 'number') {
+          // Only shift unfixed posts' actual positions
+          node.x += shiftX
+        }
+      })
 
       // Update original center for next shift
       originalCenterRef.current = { x: newCenterX, y: newCenterY }
@@ -859,28 +1080,32 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       canvas.width = newContainerWidth
       canvas.height = container.clientHeight
 
-      // Update the simulation center force
+      // Apply focus transform AFTER canvas has resized - center on the focused node
+      if (applyFocusTransform && focusedId) {
+        const focusedNode = nodesRef.current.find(n => n.id === focusedId)
+        if (focusedNode && focusedNode.x !== undefined && focusedNode.y !== undefined) {
+          const newZoom = 1.8
+          // Calculate pan to center the focused node in the new canvas
+          const panX = (newCenterX - focusedNode.x) * newZoom
+          const panY = (newCenterY - focusedNode.y) * newZoom
+          setTransform({ x: panX, y: panY, k: newZoom })
+        }
+      }
+
+      // Keep simulation calm - NO center force (categories are fixed)
       const simulation = simulationRef.current
       if (simulation) {
-        if (focusedId) {
-          // When focused, remove center force so nodes don't all rush to center
-          // and keep simulation very calm
-          simulation.force('center', null)
-          simulation.alpha(0.05).alphaTarget(0.02).restart()
-        } else {
-          // When not focused, restore center force
-          simulation.force('center', forceCenter(newCenterX, newCenterY))
-          simulation.alpha(0.3).alphaTarget(0.03).restart()
-        }
+        simulation.force('center', null) // Never use center force
+        simulation.alpha(0.1).alphaTarget(0.02).restart()
       }
 
       drawRef.current()
     }
 
-    // Shift immediately and after CSS transition
-    shiftNodes()
-    const t1 = setTimeout(shiftNodes, 150)
-    const t2 = setTimeout(shiftNodes, 350)
+    // Shift immediately (no transform yet), then after CSS transition (apply transform on final call)
+    shiftNodes(false)
+    const t1 = setTimeout(() => shiftNodes(false), 150)
+    const t2 = setTimeout(() => shiftNodes(true), 350)
 
     return () => {
       clearTimeout(t1)
@@ -910,7 +1135,7 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
               <div className="w-10 h-10 border-4 border-gray-700 border-t-purple-500 rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-gray-400">Loading mind cloud...</p>
+              <p className="text-gray-400">Loading Portfolio...</p>
             </div>
           </div>
         )}
@@ -992,10 +1217,16 @@ export function MindCloud({ className = '' }: MindCloudProps) {
                     <p className="text-gray-500">No articles in this category yet.</p>
                   ) : (
                     <div className="space-y-4">
-                      {categoryPosts.map((post, index) => (
+                      {categoryPosts.map((post: BlogPost & { isProject?: boolean; projectData?: ProjectData }, index) => (
                         <button
                           key={post.id || `post-${index}`}
-                          onClick={() => openPost(post.slug)}
+                          onClick={() => {
+                            if (post.isProject && post.projectData) {
+                              openProject(post.projectData)
+                            } else {
+                              openPost(post.slug)
+                            }
+                          }}
                           className="w-full text-left p-4 rounded-lg bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-gray-700 transition-all group"
                         >
                           <h3 className="text-lg font-medium text-white group-hover:text-purple-400 transition-colors mb-2">
@@ -1123,9 +1354,101 @@ export function MindCloud({ className = '' }: MindCloudProps) {
                     </button>
                   </div>
                 </article>
+              ) : selectedProject ? (
+                <article className="p-6">
+                  {/* Project Image */}
+                  {selectedProject.imageUrl && (
+                    <div className="relative w-full h-32 sm:h-48 md:h-64 rounded-xl overflow-hidden mb-6">
+                      <img
+                        src={selectedProject.imageUrl}
+                        alt={selectedProject.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  {/* Category Badge */}
+                  {selectedProject.category && (
+                    <div className="mb-4">
+                      <span className="px-3 py-1 rounded-full text-xs font-medium text-white bg-[#A23B72]">
+                        {selectedProject.category}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Title */}
+                  <h1 className="text-3xl font-bold text-white mb-4">
+                    {selectedProject.title}
+                  </h1>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 text-gray-400 text-sm mb-6">
+                    {selectedProject.primaryLanguage && (
+                      <div className="flex items-center gap-1">
+                        <Code size={14} />
+                        <span>{selectedProject.primaryLanguage}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1">
+                      <Star size={14} />
+                      <span>{selectedProject.starsCount}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <GitFork size={14} />
+                      <span>{selectedProject.forksCount}</span>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  {selectedProject.description && (
+                    <p className="text-gray-300 mb-6 leading-relaxed">
+                      {selectedProject.description}
+                    </p>
+                  )}
+
+                  {/* Technologies */}
+                  {selectedProject.technologyNames && selectedProject.technologyNames.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-6">
+                      {selectedProject.technologyNames.map((tech, index) => (
+                        <span
+                          key={`tech-${index}`}
+                          className="px-2 py-1 text-xs rounded bg-gray-800 text-gray-300"
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-4 mt-8 pt-6 border-t border-gray-800">
+                    {selectedProject.githubUrl && (
+                      <a
+                        href={selectedProject.githubUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition-colors"
+                      >
+                        <Github size={18} />
+                        <span>View on GitHub</span>
+                      </a>
+                    )}
+                    {selectedProject.liveUrl && (
+                      <a
+                        href={selectedProject.liveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition-colors"
+                      >
+                        <ExternalLink size={18} />
+                        <span>Live Demo</span>
+                      </a>
+                    )}
+                  </div>
+                </article>
               ) : (
                 <div className="flex items-center justify-center h-64 text-gray-500">
-                  Failed to load post
+                  Failed to load content
                 </div>
               )}
             </div>

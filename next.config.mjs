@@ -23,6 +23,15 @@ const nextConfig = {
     ],
     unoptimized: true,
   },
+  async redirects() {
+    return [
+      {
+        source: '/projects',
+        destination: '/blog',
+        permanent: true,
+      },
+    ]
+  },
 };
 
 export default nextConfig;

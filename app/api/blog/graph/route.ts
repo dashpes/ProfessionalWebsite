@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/database'
-import { calculateTagConnections, GraphNode, GraphLink, GraphData } from '@/lib/graph-utils'
+import { calculateTagConnections, GraphNode, GraphLink, GraphData, ProjectData } from '@/lib/graph-utils'
 
 export const revalidate = 3600 // Cache for 1 hour
 
@@ -50,6 +50,23 @@ export async function GET() {
       }
     })
 
+    // Fetch all active projects with their technologies
+    const projects = await db.project.findMany({
+      where: {
+        status: 'ACTIVE'
+      },
+      include: {
+        technologies: {
+          include: {
+            technology: true
+          }
+        }
+      },
+      orderBy: {
+        displayOrder: 'asc'
+      }
+    })
+
     // Fetch all categories and tags with post counts
     const [categories, tags] = await Promise.all([
       db.blogCategory.findMany({
@@ -69,7 +86,7 @@ export async function GET() {
     ])
 
     // Transform posts to graph nodes
-    const nodes: GraphNode[] = posts.map(post => {
+    const blogNodes: GraphNode[] = posts.map(post => {
       // Get first category if exists
       const firstCategory = post.categories[0]?.category
 
@@ -84,11 +101,51 @@ export async function GET() {
         categoryColor: firstCategory?.color || null,
         tagIds: post.tags.map(t => t.tag.id),
         tagNames: post.tags.map(t => t.tag.name),
-        publishedAt: post.publishedAt?.toISOString() || null
+        publishedAt: post.publishedAt?.toISOString() || null,
+        isProject: false
       }
     })
 
-    // Calculate tag-based connections
+    // Transform projects to graph nodes
+    const projectNodes: GraphNode[] = projects.map(project => {
+      const technologyNames = project.technologies.map(t => t.technology.name)
+      const projectData: ProjectData = {
+        id: project.id,
+        title: project.titleOverride || project.title,
+        description: project.descriptionOverride || project.description,
+        imageUrl: project.imageUrlOverride || project.imageUrl,
+        githubUrl: project.githubUrl,
+        liveUrl: project.liveUrl,
+        category: project.category,
+        starsCount: project.starsCount,
+        forksCount: project.forksCount,
+        primaryLanguage: project.primaryLanguage,
+        viewCount: project.viewCount,
+        likeCount: project.likeCount,
+        technologyNames
+      }
+
+      return {
+        id: `project-${project.id}`,
+        slug: project.name,
+        title: projectData.title,
+        excerpt: projectData.description,
+        viewCount: project.viewCount,
+        categoryId: null,
+        categoryName: 'Projects',
+        categoryColor: '#A23B72', // Magenta for projects
+        tagIds: [],
+        tagNames: technologyNames, // Technologies act as tags for connections
+        publishedAt: project.createdAt.toISOString(),
+        isProject: true,
+        projectData
+      }
+    })
+
+    // Combine all nodes
+    const nodes = [...blogNodes, ...projectNodes]
+
+    // Calculate tag-based connections (includes project-blog connections)
     const tagLinks = calculateTagConnections(nodes)
 
     // Get backlink connections (only between published posts)

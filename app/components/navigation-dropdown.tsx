@@ -48,18 +48,10 @@ export default function NavigationDropdown() {
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link
-              href="/projects"
-              className="text-[#5B2C91] hover:bg-purple-100/50 hover:text-[#3D1D61] transition-colors font-medium"
-            >
-              Projects
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
               href="/blog"
               className="text-[#5B2C91] hover:bg-purple-100/50 hover:text-[#3D1D61] transition-colors font-medium"
             >
-              Blog
+              Portfolio
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

@@ -3,6 +3,22 @@
  * Transforms blog data into graph nodes and links
  */
 
+export interface ProjectData {
+  id: string
+  title: string
+  description: string | null
+  imageUrl: string | null
+  githubUrl: string | null
+  liveUrl: string | null
+  category: string | null
+  starsCount: number
+  forksCount: number
+  primaryLanguage: string | null
+  viewCount: number
+  likeCount: number
+  technologyNames: string[]
+}
+
 export interface GraphNode {
   id: string
   slug: string
@@ -15,6 +31,8 @@ export interface GraphNode {
   tagIds: string[]
   tagNames: string[]
   publishedAt: string | null
+  isProject?: boolean
+  projectData?: ProjectData
 }
 
 export interface GraphLink {
@@ -52,30 +70,36 @@ export interface GraphData {
 }
 
 /**
- * Calculate tag-based connections between posts
- * Posts are connected if they share one or more tags
+ * Calculate tag-based connections between posts and projects
+ * Nodes are connected if they share one or more tags/technologies
+ * Uses case-insensitive matching to connect projects (technologies) with blog posts (tags)
  */
 export function calculateTagConnections(nodes: GraphNode[]): GraphLink[] {
   const links: Map<string, GraphLink> = new Map()
 
   for (let i = 0; i < nodes.length; i++) {
     for (let j = i + 1; j < nodes.length; j++) {
-      const postA = nodes[i]
-      const postB = nodes[j]
+      const nodeA = nodes[i]
+      const nodeB = nodes[j]
 
-      // Find shared tags
-      const sharedTagIds = postA.tagIds.filter(tagId => postB.tagIds.includes(tagId))
+      // Use case-insensitive matching for cross-type connections (projects <-> blog posts)
+      const aNamesLower = nodeA.tagNames.map(n => n.toLowerCase())
+      const bNamesLower = nodeB.tagNames.map(n => n.toLowerCase())
 
-      if (sharedTagIds.length > 0) {
-        // Find the shared tag names
-        const sharedTagNames = postA.tagNames.filter(name => postB.tagNames.includes(name))
+      const sharedNamesLower = aNamesLower.filter(name => bNamesLower.includes(name))
 
-        const key = [postA.id, postB.id].sort().join('-')
+      if (sharedNamesLower.length > 0) {
+        // Get original case tag names for display
+        const sharedTagNames = nodeA.tagNames.filter(name =>
+          bNamesLower.includes(name.toLowerCase())
+        )
+
+        const key = [nodeA.id, nodeB.id].sort().join('-')
         links.set(key, {
-          source: postA.id,
-          target: postB.id,
+          source: nodeA.id,
+          target: nodeB.id,
           type: 'tag',
-          strength: sharedTagIds.length,
+          strength: sharedNamesLower.length,
           sharedTags: sharedTagNames
         })
       }

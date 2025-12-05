@@ -220,13 +220,13 @@ export default function FeaturedProjects() {
           ? 'opacity-100 transform translate-y-0' 
           : 'opacity-0 transform translate-y-8'
       }`}>
-        <Link href="/projects">
+        <Link href="/blog">
           <Button
             size="lg"
             variant="outline"
             className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent"
           >
-            View All Projects
+            Explore All Projects
           </Button>
         </Link>
       </div>
