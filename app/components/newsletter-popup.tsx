@@ -70,15 +70,15 @@ export function NewsletterPopup() {
       />
 
       {/* Modal */}
-      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md animate-in zoom-in-95 duration-200">
+      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md mx-4 sm:mx-0 animate-in zoom-in-95 duration-200">
         <div className="bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900 rounded-2xl shadow-2xl border border-purple-600/50 p-8 relative">
           {/* Close button */}
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 text-gray-300 hover:text-white transition-colors"
+            className="absolute top-3 right-3 p-2 text-gray-300 hover:text-white transition-colors rounded-md hover:bg-white/10"
             aria-label="Close"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
 
           {/* Content */}

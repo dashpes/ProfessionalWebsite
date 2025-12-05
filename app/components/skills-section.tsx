@@ -72,7 +72,7 @@ export default function SkillsSection() {
 
   return (
     <section ref={sectionRef} className="container mx-auto px-4 py-16 md:py-24">
-      <h2 className={`text-3xl md:text-5xl font-bold text-center mb-12 transition-all duration-1000 ${
+      <h2 className={`text-2xl sm:text-3xl md:text-5xl font-bold text-center mb-12 transition-all duration-1000 ${
         titleVisible
           ? 'opacity-100 transform translate-y-0'
           : 'opacity-0 transform translate-y-8'

@@ -619,8 +619,19 @@ const Waves: React.FC<WavesProps> = ({
     }
 
     function onResize() {
-      setSize()
-      setLines()
+      // Delay to ensure viewport has updated (especially for orientation changes)
+      setTimeout(() => {
+        setSize()
+        setLines()
+      }, 100)
+    }
+
+    function onOrientationChange() {
+      // Give more time for orientation change to settle
+      setTimeout(() => {
+        setSize()
+        setLines()
+      }, 300)
     }
 
     function onMouseMove(e: MouseEvent) {
@@ -651,6 +662,7 @@ const Waves: React.FC<WavesProps> = ({
     frameIdRef.current = requestAnimationFrame(tick)
 
     window.addEventListener("resize", onResize)
+    window.addEventListener("orientationchange", onOrientationChange)
 
     // Only add mouse/touch listeners if interactive
     if (interactive) {
@@ -660,6 +672,7 @@ const Waves: React.FC<WavesProps> = ({
 
     return () => {
       window.removeEventListener("resize", onResize)
+      window.removeEventListener("orientationchange", onOrientationChange)
       if (interactive) {
         window.removeEventListener("mousemove", onMouseMove)
         window.removeEventListener("touchmove", onTouchMove)

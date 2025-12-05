@@ -75,6 +75,18 @@ export function MindCloud({ className = '' }: MindCloudProps) {
   const [categoryPosts, setCategoryPosts] = useState<BlogPost[]>([])
   const [categoryLoading, setCategoryLoading] = useState(false)
 
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   // Open post in side panel
   const openPost = async (slug: string) => {
     setSelectedCategory(null) // Clear category view
@@ -193,8 +205,6 @@ export function MindCloud({ className = '' }: MindCloudProps) {
 
     const width = canvas.width
     const height = canvas.height
-
-    if (width === 0 || height === 0) return
 
     ctx.clearRect(0, 0, width, height)
     ctx.save()
@@ -642,6 +652,135 @@ export function MindCloud({ className = '' }: MindCloudProps) {
     }
   }, [isDragging, dragStart, transform])
 
+  // Touch state refs (persist across renders)
+  const touchStateRef = useRef({
+    lastTouchDistance: 0,
+    touchStartPos: { x: 0, y: 0 },
+    isTouchDragging: false,
+    initialTransform: { x: 0, y: 0 }
+  })
+
+  // Touch events for mobile
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const state = touchStateRef.current
+
+      if (e.touches.length === 1) {
+        const touch = e.touches[0]
+        state.touchStartPos = { x: touch.clientX, y: touch.clientY }
+        state.initialTransform = { x: transform.x, y: transform.y }
+
+        // Check if touching a node
+        const rect = canvas.getBoundingClientRect()
+        const centerX = canvas.width / 2
+        const centerY = canvas.height / 2
+        const nodeX = (touch.clientX - rect.left - transform.x - centerX) / transform.k + centerX
+        const nodeY = (touch.clientY - rect.top - transform.y - centerY) / transform.k + centerY
+
+        let touchedNode = false
+        for (const node of nodesRef.current) {
+          if (node.x === undefined || node.y === undefined) continue
+          const dx = nodeX - node.x
+          const dy = nodeY - node.y
+          if (Math.sqrt(dx * dx + dy * dy) < node.size + 10) {
+            touchedNode = true
+            break
+          }
+        }
+
+        state.isTouchDragging = !touchedNode
+      } else if (e.touches.length === 2) {
+        // Pinch zoom start
+        const dx = e.touches[0].clientX - e.touches[1].clientX
+        const dy = e.touches[0].clientY - e.touches[1].clientY
+        state.lastTouchDistance = Math.sqrt(dx * dx + dy * dy)
+        state.isTouchDragging = false
+      }
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault()
+      const state = touchStateRef.current
+
+      if (e.touches.length === 1 && state.isTouchDragging) {
+        // Pan
+        const touch = e.touches[0]
+        const deltaX = touch.clientX - state.touchStartPos.x
+        const deltaY = touch.clientY - state.touchStartPos.y
+
+        setTransform(prev => ({
+          ...prev,
+          x: state.initialTransform.x + deltaX,
+          y: state.initialTransform.y + deltaY
+        }))
+      } else if (e.touches.length === 2) {
+        // Pinch zoom
+        const dx = e.touches[0].clientX - e.touches[1].clientX
+        const dy = e.touches[0].clientY - e.touches[1].clientY
+        const distance = Math.sqrt(dx * dx + dy * dy)
+
+        if (state.lastTouchDistance > 0) {
+          const scale = distance / state.lastTouchDistance
+          setTransform(prev => ({
+            ...prev,
+            k: Math.max(0.3, Math.min(3, prev.k * scale))
+          }))
+        }
+        state.lastTouchDistance = distance
+      }
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      const state = touchStateRef.current
+
+      if (e.changedTouches.length === 1 && !state.isTouchDragging) {
+        // Tap on node
+        const touch = e.changedTouches[0]
+        const rect = canvas.getBoundingClientRect()
+        const centerX = canvas.width / 2
+        const centerY = canvas.height / 2
+        const nodeX = (touch.clientX - rect.left - transform.x - centerX) / transform.k + centerX
+        const nodeY = (touch.clientY - rect.top - transform.y - centerY) / transform.k + centerY
+
+        for (const node of nodesRef.current) {
+          if (node.x === undefined || node.y === undefined) continue
+          const dx = nodeX - node.x
+          const dy = nodeY - node.y
+          if (Math.sqrt(dx * dx + dy * dy) < node.size + 10) {
+            focusedNodeRef.current = node.id
+
+            if (node.type === 'post' && node.slug) {
+              node.fx = node.x
+              node.fy = node.y
+              openPost(node.slug)
+            } else if (node.type === 'topic') {
+              node.fx = node.x
+              node.fy = node.y
+              openCategory(node.label)
+            }
+            break
+          }
+        }
+      }
+
+      state.isTouchDragging = false
+      state.lastTouchDistance = 0
+    }
+
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false })
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
+    canvas.addEventListener('touchend', handleTouchEnd)
+
+    return () => {
+      canvas.removeEventListener('touchstart', handleTouchStart)
+      canvas.removeEventListener('touchmove', handleTouchMove)
+      canvas.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [transform, openPost, openCategory])
+
   // Redraw on transform/hover change
   useEffect(() => {
     draw()
@@ -756,7 +895,7 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         ref={containerRef}
         className="relative transition-all duration-300 ease-in-out h-full"
         style={{
-          width: isPanelOpen ? '50%' : '100%',
+          width: isPanelOpen ? (isMobile ? '0%' : '50%') : '100%',
           background: '#000000'
         }}
       >
@@ -779,20 +918,20 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         {/* Controls hint */}
         {!loading && !isPanelOpen && (
           <div
-            className="absolute bottom-4 right-4 px-4 py-2 text-sm text-gray-400"
+            className="absolute bottom-4 right-4 px-3 py-2 sm:px-4 text-xs sm:text-sm text-gray-400"
             style={{ background: 'rgba(20, 20, 20, 0.9)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.1)' }}
           >
-            Scroll to zoom · Drag to pan
+            {isMobile ? 'Pinch to zoom · Drag to pan' : 'Scroll to zoom · Drag to pan'}
           </div>
         )}
 
-        {/* Legend */}
-        {!loading && (
+        {/* Legend - hide on mobile when panel is open */}
+        {!loading && !(isMobile && isPanelOpen) && (
           <div
-            className="absolute top-4 left-4 px-4 py-3"
+            className="absolute top-4 left-4 px-3 py-2 sm:px-4 sm:py-3"
             style={{ background: 'rgba(20, 20, 20, 0.9)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.1)' }}
           >
-            <div className="flex flex-col gap-2 text-sm">
+            <div className="flex flex-col gap-1.5 sm:gap-2 text-xs sm:text-sm">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ background: '#5B2C91' }} />
                 <span className="text-gray-300">Software</span>
@@ -814,7 +953,7 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       <div
         className="h-full overflow-hidden transition-all duration-300 ease-in-out border-l border-gray-800"
         style={{
-          width: isPanelOpen ? '50%' : '0%',
+          width: isPanelOpen ? (isMobile ? '100%' : '50%') : '0%',
           background: '#0a0a0a'
         }}
       >
@@ -824,9 +963,9 @@ export function MindCloud({ className = '' }: MindCloudProps) {
             <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-800">
               <button
                 onClick={closePanel}
-                className="p-1.5 rounded-md hover:bg-gray-800 transition-colors text-gray-400 hover:text-white"
+                className="p-3 rounded-md hover:bg-gray-800 transition-colors text-gray-400 hover:text-white"
               >
-                <ArrowLeft size={18} />
+                <ArrowLeft size={20} />
               </button>
               {selectedCategory && (
                 <div className="flex items-center gap-2">
@@ -892,7 +1031,7 @@ export function MindCloud({ className = '' }: MindCloudProps) {
                 <article className="p-6">
                   {/* Cover Image */}
                   {selectedPost.coverImage && (
-                    <div className="relative w-full h-48 md:h-64 rounded-xl overflow-hidden mb-6">
+                    <div className="relative w-full h-32 sm:h-48 md:h-64 rounded-xl overflow-hidden mb-6">
                       <img
                         src={selectedPost.coverImage}
                         alt={selectedPost.title}

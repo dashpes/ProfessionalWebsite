@@ -180,7 +180,7 @@ export default function ProjectProfileCard({ project }: ProjectProfileCardProps)
   }
 
   return (
-    <div ref={cardRef} className="w-full h-full flex flex-col max-w-[420px] mx-auto backdrop-blur-xl bg-white/90 border border-gray-200 rounded-2xl overflow-hidden transition-all duration-500 ease-out hover:scale-[1.01] hover:bg-white hover:border-gray-300 shadow-2xl">
+    <div ref={cardRef} className="w-full h-full flex flex-col max-w-[calc(100vw-2rem)] sm:max-w-[420px] mx-auto backdrop-blur-xl bg-white/90 border border-gray-200 rounded-2xl overflow-hidden transition-all duration-500 ease-out hover:scale-[1.01] hover:bg-white hover:border-gray-300 shadow-2xl">
       {/* Project Image */}
       {project.image && (
         <div className="relative h-48 overflow-hidden">

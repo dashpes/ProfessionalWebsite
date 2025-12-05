@@ -105,17 +105,17 @@ export default function HeroSection() {
   return (
     <section className="flex items-center justify-center min-h-screen">
       <div className="text-center">
-        <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-tight mb-6" style={{color: '#2A2A2A'}}>
+        <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-bold leading-tight mb-6" style={{color: '#2A2A2A'}}>
           {displayedName}
           {!isComplete && !showSubtitle && (
-            <span className={`inline-block w-1 h-20 md:h-24 lg:h-28 ml-2 ${showCursor ? 'opacity-100' : 'opacity-0'}`} style={{backgroundColor: '#2A2A2A'}} />
+            <span className={`inline-block w-1 h-12 sm:h-20 md:h-24 lg:h-28 ml-2 ${showCursor ? 'opacity-100' : 'opacity-0'}`} style={{backgroundColor: '#2A2A2A'}} />
           )}
         </h1>
         {showSubtitle && (
-          <h2 className="text-2xl md:text-4xl font-semibold leading-tight mb-8" style={{color: '#5B2C91'}}>
+          <h2 className="text-base sm:text-2xl md:text-4xl font-semibold leading-tight mb-8 px-4 sm:px-0" style={{color: '#5B2C91'}}>
             {displayedSubtitle}
             {!isComplete && showSubtitle && !showButtons && (
-              <span className={`inline-block w-1 h-6 md:h-8 ml-2 ${showCursor ? 'opacity-100' : 'opacity-0'}`} style={{backgroundColor: '#5B2C91'}} />
+              <span className={`inline-block w-1 h-4 sm:h-6 md:h-8 ml-2 ${showCursor ? 'opacity-100' : 'opacity-0'}`} style={{backgroundColor: '#5B2C91'}} />
             )}
           </h2>
         )}
@@ -127,7 +127,7 @@ export default function HeroSection() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]"
+                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[140px] sm:min-w-[160px]"
               >
                 View My Work
               </Button>
@@ -136,7 +136,7 @@ export default function HeroSection() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]"
+                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[140px] sm:min-w-[160px]"
               >
                 Get to Know Me
               </Button>
@@ -145,7 +145,7 @@ export default function HeroSection() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[160px]"
+                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white bg-transparent transition-all duration-300 min-w-[140px] sm:min-w-[160px]"
               >
                 Get in Touch
               </Button>

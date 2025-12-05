@@ -50,7 +50,7 @@ export function GraphSidebar({
 
   return (
     <div
-      className="absolute top-4 right-4 bottom-4 w-80 overflow-hidden animate-in slide-in-from-right duration-200"
+      className="absolute top-4 right-4 bottom-4 w-[calc(100vw-2rem)] sm:w-80 overflow-hidden animate-in slide-in-from-right duration-200"
       style={{
         background: 'rgba(255, 255, 255, 0.98)',
         backdropFilter: 'blur(12px)',
@@ -76,9 +76,9 @@ export function GraphSidebar({
         </div>
         <button
           onClick={onClose}
-          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-3 hover:bg-gray-100 rounded-lg transition-colors"
         >
-          <X className="w-4 h-4 text-gray-500" />
+          <X className="w-5 h-5 text-gray-500" />
         </button>
       </div>
 

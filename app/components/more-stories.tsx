@@ -21,7 +21,7 @@ interface MoreStoriesProps {
 export function MoreStories({ posts }: MoreStoriesProps) {
   return (
     <section className="mb-12 md:mb-16">
-      <h2 className="mb-12 text-3xl md:text-5xl font-bold text-center" style={{color: '#5B2C91'}}>
+      <h2 className="mb-12 text-2xl sm:text-3xl md:text-5xl font-bold text-center" style={{color: '#5B2C91'}}>
         More Stories
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

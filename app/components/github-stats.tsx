@@ -148,7 +148,7 @@ export default function GitHubStats() {
         }`}>
           <div className="flex items-center justify-center gap-2 mb-3">
             <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#3D7C5B' }} />
-            <h2 className="text-3xl md:text-5xl font-bold" style={{ color: '#5B2C91' }}>Live GitHub Activity</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold" style={{ color: '#5B2C91' }}>Live GitHub Activity</h2>
           </div>
           <p className="text-lg leading-relaxed" style={{ color: '#2A2A2A' }}>Real-time stats from my development journey</p>
         </div>

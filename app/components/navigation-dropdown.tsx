@@ -6,7 +6,7 @@ import { MenuIcon } from "lucide-react"
 
 export default function NavigationDropdown() {
   return (
-    <div className="fixed top-6 right-6 z-[100]">
+    <div className="fixed top-4 right-4 sm:top-6 sm:right-6 z-[100]">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
