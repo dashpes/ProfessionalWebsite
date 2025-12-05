@@ -251,7 +251,7 @@ export function BlogPostForm({ post, onSave, onCancel, loading = false }: BlogPo
                   <Input
                     value={newKeyword}
                     onChange={(e) => setNewKeyword(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}
                     className="bg-gray-800 border-gray-600 text-white"
                     placeholder="Add keyword..."
                   />
@@ -352,7 +352,7 @@ export function BlogPostForm({ post, onSave, onCancel, loading = false }: BlogPo
                 <Input
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCategory())}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCategory())}
                   className="bg-gray-800 border-gray-600 text-white"
                   placeholder="Add category..."
                   list="categories"
@@ -392,7 +392,7 @@ export function BlogPostForm({ post, onSave, onCancel, loading = false }: BlogPo
                 <Input
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                   className="bg-gray-800 border-gray-600 text-white"
                   placeholder="Add tag..."
                   list="tags"

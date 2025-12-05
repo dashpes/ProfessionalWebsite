@@ -137,6 +137,26 @@ export function MindCloud({ className = '' }: MindCloudProps) {
   // Close panel
   const closePanel = () => {
     setIsPanelOpen(false)
+
+    // Reset view to center on whole graph
+    setTransform({ x: 0, y: 0, k: 1 })
+
+    // Release the fixed node so it can float again
+    if (focusedNodeRef.current) {
+      const focusedNode = nodesRef.current.find(n => n.id === focusedNodeRef.current)
+      if (focusedNode) {
+        focusedNode.fx = null
+        focusedNode.fy = null
+      }
+      focusedNodeRef.current = null
+    }
+
+    // Reheat simulation so nodes start moving
+    const simulation = simulationRef.current
+    if (simulation) {
+      simulation.alpha(0.3).restart()
+    }
+
     setTimeout(() => {
       setSelectedPost(null)
       setSelectedCategory(null)
@@ -162,6 +182,7 @@ export function MindCloud({ className = '' }: MindCloudProps) {
   const linksRef = useRef<GraphLink[]>([])
   const simulationRef = useRef<Simulation<GraphNode, GraphLink> | null>(null)
   const drawRef = useRef<() => void>(() => {})
+  const focusedNodeRef = useRef<string | null>(null)
 
   // Category colors
   const CATEGORY_COLORS: Record<string, string> = {
@@ -439,15 +460,35 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         simulationRef.current = simulation
 
         simulation.on('tick', () => {
+          // Apply very subtle ambient floating motion
+          const time = Date.now() * 0.001 // Time in seconds
+
+          nodesRef.current.forEach((node, i) => {
+            if (node.x === undefined || node.y === undefined) return
+            if (node.fx !== null && node.fx !== undefined) return // Skip fixed nodes
+
+            // Each node gets a unique phase based on its index
+            const phase = i * 2.3
+            const floatStrength = 0.08 // Very subtle movement
+
+            // Gentle oscillation - add small displacement, not velocity
+            // This keeps nodes in their area instead of drifting
+            const offsetX = Math.sin(time * 0.3 + phase) * floatStrength
+            const offsetY = Math.cos(time * 0.25 + phase * 0.8) * floatStrength
+
+            node.vx = (node.vx || 0) * 0.95 + offsetX // Dampen existing velocity
+            node.vy = (node.vy || 0) * 0.95 + offsetY
+          })
+
           drawRef.current()
         })
 
-        // Run simulation for a bit then stop for performance
+        // Run simulation initially
         simulation.alpha(1).restart()
+
+        // After initial settle, keep simulation running with gentle energy
         setTimeout(() => {
-          simulation.stop()
-          // Do one final draw
-          drawRef.current()
+          simulation.alphaMin(0).alphaDecay(0.01).alphaTarget(0.03).restart()
         }, 3000)
 
         setInitialized(true)
@@ -553,10 +594,41 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         const dx = x - node.x
         const dy = y - node.y
         if (Math.sqrt(dx * dx + dy * dy) < node.size + 5) {
+          focusedNodeRef.current = node.id
+
           if (node.type === 'post' && node.slug) {
+            // Pan/zoom to focus on this node in its natural position
+            // The new canvas will be 50% width after panel opens
+            const newCanvasWidth = window.innerWidth / 2
+            const newCenterX = newCanvasWidth / 2
+            const newCenterY = canvas.height / 2
+
+            // Fix the node in place so it doesn't drift while reading
+            node.fx = node.x
+            node.fy = node.y
+
+            // Calculate transform to center on this node's current position
+            const newZoom = 1.8
+            const panX = (newCenterX - node.x) * newZoom
+            const panY = (newCenterY - node.y) * newZoom
+
+            setTransform({ x: panX, y: panY, k: newZoom })
+
             openPost(node.slug)
           } else if (node.type === 'topic') {
-            // Click on category node - show list of posts
+            const newCanvasWidth = window.innerWidth / 2
+            const newCenterX = newCanvasWidth / 2
+            const newCenterY = canvas.height / 2
+
+            node.fx = node.x
+            node.fy = node.y
+
+            const newZoom = 1.8
+            const panX = (newCenterX - node.x) * newZoom
+            const panY = (newCenterY - node.y) * newZoom
+
+            setTransform({ x: panX, y: panY, k: newZoom })
+
             openCategory(node.label)
           }
           break
@@ -621,17 +693,32 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       const oldCenterX = originalCenterRef.current.x
       const shiftX = newCenterX - oldCenterX
 
-      // Shift all node positions
-      nodesRef.current.forEach(node => {
-        if (typeof node.x === 'number') {
-          node.x += shiftX
+      // Shift node positions only when NOT focused (normal open/close without selection)
+      const focusedId = focusedNodeRef.current
+
+      if (!focusedId) {
+        // Normal panel open/close - shift all nodes to re-center
+        nodesRef.current.forEach(node => {
+          if (typeof node.x === 'number') {
+            node.x += shiftX
+          }
+          if (node.fx !== null && node.fx !== undefined) {
+            node.fx += shiftX
+          }
+          // Keep Blog node centered
+          if (node.id === 'blog-center') {
+            node.fx = newCenterX
+            node.fy = newCenterY
+          }
+        })
+      } else {
+        // Focused mode - release Blog node to float naturally
+        const blogNode = nodesRef.current.find(n => n.id === 'blog-center')
+        if (blogNode) {
+          blogNode.fx = null
+          blogNode.fy = null
         }
-        // Update fixed position for center node
-        if (node.id === 'blog-center') {
-          node.fx = newCenterX
-          node.fy = newCenterY
-        }
-      })
+      }
 
       // Update original center for next shift
       originalCenterRef.current = { x: newCenterX, y: newCenterY }
@@ -643,10 +730,16 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       // Update the simulation center force
       const simulation = simulationRef.current
       if (simulation) {
-        simulation.force('center', forceCenter(newCenterX, newCenterY))
-        // Brief reheat to settle any collisions
-        simulation.alpha(0.1).restart()
-        setTimeout(() => simulation.stop(), 500)
+        if (focusedId) {
+          // When focused, remove center force so nodes don't all rush to center
+          // and keep simulation very calm
+          simulation.force('center', null)
+          simulation.alpha(0.05).alphaTarget(0.02).restart()
+        } else {
+          // When not focused, restore center force
+          simulation.force('center', forceCenter(newCenterX, newCenterY))
+          simulation.alpha(0.3).alphaTarget(0.03).restart()
+        }
       }
 
       drawRef.current()
@@ -687,22 +780,6 @@ export function MindCloud({ className = '' }: MindCloudProps) {
               <div className="w-10 h-10 border-4 border-gray-700 border-t-purple-500 rounded-full animate-spin mx-auto mb-4" />
               <p className="text-gray-400">Loading mind cloud...</p>
             </div>
-          </div>
-        )}
-
-        {/* Hover tooltip */}
-        {!loading && !isPanelOpen && hoveredNode && hoveredNode.type === 'post' && (
-          <div
-            className="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 p-4 pointer-events-none"
-            style={{
-              background: 'rgba(20, 20, 20, 0.95)',
-              borderRadius: '12px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
-            }}
-          >
-            <p className="font-semibold text-white">{hoveredNode.label}</p>
-            <p className="text-sm text-purple-400 mt-2">Click to read post →</p>
           </div>
         )}
 
@@ -751,23 +828,21 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         {isPanelOpen && (
           <div className="h-full flex flex-col">
             {/* Panel Header */}
-            <div className="flex items-center gap-4 p-4 border-b border-gray-800">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-800">
               <button
                 onClick={closePanel}
-                className="p-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-400 hover:text-white"
+                className="p-1.5 rounded-md hover:bg-gray-800 transition-colors text-gray-400 hover:text-white"
               >
-                <ArrowLeft size={24} />
+                <ArrowLeft size={18} />
               </button>
-              {selectedCategory ? (
-                <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-bold text-white">{selectedCategory}</h2>
+              {selectedCategory && (
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-semibold text-white">{selectedCategory}</h2>
                   <span className="text-gray-500">·</span>
-                  <span className="text-gray-400 text-sm">
+                  <span className="text-gray-400 text-xs">
                     {categoryPosts.length} {categoryPosts.length === 1 ? 'article' : 'articles'}
                   </span>
                 </div>
-              ) : (
-                <span className="text-gray-400 text-sm">Back to graph</span>
               )}
             </div>
 
@@ -873,14 +948,16 @@ export function MindCloud({ className = '' }: MindCloudProps) {
 
                   {/* Content */}
                   <div
-                    className="prose prose-invert max-w-none blog-content
-                      prose-p:text-white prose-p:leading-relaxed prose-p:opacity-90
-                      prose-headings:text-white
-                      prose-strong:text-white
-                      prose-a:text-purple-400 prose-a:no-underline hover:prose-a:underline
-                      prose-li:text-white prose-li:opacity-90
-                      prose-blockquote:border-purple-500 prose-blockquote:text-gray-100
-                      [&_pre]:bg-[#1e1e1e] [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:overflow-x-auto
+                    className="blog-content max-w-none
+                      [&_p]:text-white [&_p]:leading-relaxed [&_p]:opacity-90 [&_p]:mb-6
+                      [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-10 [&_h2]:mb-4
+                      [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:text-white [&_h3]:mt-8 [&_h3]:mb-3
+                      [&_strong]:text-white [&_strong]:font-semibold
+                      [&_a]:text-purple-400 [&_a]:no-underline hover:[&_a]:underline
+                      [&_ul]:my-6 [&_ul]:pl-6 [&_ul]:list-disc [&_ol]:my-6 [&_ol]:pl-6 [&_ol]:list-decimal
+                      [&_li]:text-white [&_li]:opacity-90 [&_li]:mb-3
+                      [&_blockquote]:border-l-4 [&_blockquote]:border-purple-500 [&_blockquote]:pl-4 [&_blockquote]:text-gray-100
+                      [&_pre]:bg-[#1e1e1e] [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:overflow-x-auto [&_pre]:my-6
                       [&_code]:text-[#d4d4d4] [&_code]:text-sm
                       [&_.hljs-keyword]:text-[#569cd6] [&_.hljs-string]:text-[#ce9178]
                       [&_.hljs-number]:text-[#b5cea8] [&_.hljs-function]:text-[#dcdcaa]
