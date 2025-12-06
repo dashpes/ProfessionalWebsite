@@ -1,19 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import {
-  forceSimulation,
-  forceLink,
-  forceManyBody,
-  forceCenter,
-  forceCollide,
-  forceRadial,
-  forceX,
-  forceY,
-  SimulationNodeDatum,
-  SimulationLinkDatum,
-  Simulation
-} from 'd3-force'
 import { ArrowLeft, Heart, Share2, Calendar, Clock, Star, GitFork, Code, ExternalLink, Github } from 'lucide-react'
 import 'highlight.js/styles/vs2015.css'
 
@@ -33,7 +20,7 @@ interface ProjectData {
   technologyNames: string[]
 }
 
-interface GraphNode extends SimulationNodeDatum {
+interface GraphNode {
   id: string
   slug?: string
   label: string
@@ -42,18 +29,21 @@ interface GraphNode extends SimulationNodeDatum {
   size: number
   isProject?: boolean
   projectData?: ProjectData
-  // Explicitly include d3-force properties
-  x?: number
-  y?: number
-  vx?: number
-  vy?: number
-  fx?: number | null
-  fy?: number | null
+  // Current position (animated)
+  x: number
+  y: number
+  // Target position (final)
+  targetX: number
+  targetY: number
+  // Parent for hierarchy
+  parentId?: string
+  // Angle from center for radial layout
+  angle?: number
 }
 
-interface GraphLink extends SimulationLinkDatum<GraphNode> {
-  source: string | GraphNode
-  target: string | GraphNode
+interface GraphLink {
+  source: string
+  target: string
   strength: number
 }
 
@@ -75,6 +65,22 @@ interface MindCloudProps {
   className?: string
 }
 
+// Easing functions
+const easeOutElastic = (t: number): number => {
+  if (t === 0 || t === 1) return t
+  const p = 0.3
+  const s = p / 4
+  return Math.pow(2, -10 * t) * Math.sin((t - s) * (2 * Math.PI) / p) + 1
+}
+
+const easeOutCubic = (t: number): number => {
+  return 1 - Math.pow(1 - t, 3)
+}
+
+const lerp = (start: number, end: number, t: number): number => {
+  return start + (end - start) * t
+}
+
 export function MindCloud({ className = '' }: MindCloudProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -85,6 +91,9 @@ export function MindCloud({ className = '' }: MindCloudProps) {
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+
+  // Focus state - which parent cluster is focused (null = overview)
+  const [focusedParent, setFocusedParent] = useState<string | null>(null)
 
   // Side panel state
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null)
@@ -102,6 +111,11 @@ export function MindCloud({ className = '' }: MindCloudProps) {
   // Mobile detection
   const [isMobile, setIsMobile] = useState(false)
 
+  // Animation state
+  const animationRef = useRef<number | null>(null)
+  const zoomAnimationRef = useRef<number | null>(null)
+  const explosionCompleteRef = useRef(false)
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -113,8 +127,8 @@ export function MindCloud({ className = '' }: MindCloudProps) {
 
   // Open post in side panel
   const openPost = async (slug: string) => {
-    setSelectedCategory(null) // Clear category view
-    setSelectedProject(null) // Clear project view
+    setSelectedCategory(null)
+    setSelectedProject(null)
     setCategoryPosts([])
     setPostLoading(true)
     setIsPanelOpen(true)
@@ -144,91 +158,29 @@ export function MindCloud({ className = '' }: MindCloudProps) {
     fetch(`/api/projects/${projectData.id}/view`, { method: 'POST' }).catch(() => {})
   }
 
-  // Open category in side panel
-  const openCategory = async (categoryName: string) => {
-    setSelectedPost(null) // Clear post view
-    setSelectedProject(null) // Clear project view
-    setCategoryLoading(true)
-    setSelectedCategory(categoryName)
-    setIsPanelOpen(true)
-
-    // List of programming languages for subcategory detection
-    const knownLanguages = ['python', 'javascript', 'typescript', 'java', 'go', 'rust', 'c++', 'c#', 'ruby', 'swift', 'kotlin', 'php']
-    const isLanguageSubcategory = knownLanguages.includes(categoryName.toLowerCase())
-
-    try {
-      // Fetch all posts and filter by category
-      const res = await fetch('/api/blog/graph')
-      if (res.ok) {
-        const data = await res.json()
-        // Filter posts by category and sort by date (newest first)
-        const posts = (data.nodes || [])
-          .filter((post: { categoryName: string | null; isProject?: boolean; projectData?: ProjectData }) => {
-            const postCat = post.categoryName?.toLowerCase() || ''
-            const targetCat = categoryName.toLowerCase()
-
-            // If clicking a language subcategory, filter projects by that language
-            if (isLanguageSubcategory) {
-              return post.isProject && post.projectData?.primaryLanguage?.toLowerCase() === targetCat
-            }
-
-            if (targetCat === 'software') {
-              return postCat.includes('software') || postCat.includes('engineering')
-            }
-            if (targetCat === 'data science') {
-              return postCat.includes('data')
-            }
-            if (targetCat === 'projects') {
-              return postCat.includes('project')
-            }
-            return false
-          })
-          .sort((a: { publishedAt: string }, b: { publishedAt: string }) =>
-            new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-          )
-        setCategoryPosts(posts)
-      }
-    } catch (err) {
-      console.error('Failed to load category posts:', err)
-    } finally {
-      setCategoryLoading(false)
-    }
-  }
-
   // Close panel
-  const closePanel = () => {
-    // First, restore all nodes to their original full-width positions
-    const originalPositions = originalNodePositionsRef.current
-    if (originalPositions.size > 0) {
-      nodesRef.current.forEach(node => {
-        const original = originalPositions.get(node.id)
-        if (original) {
-          node.x = original.x
-          node.fx = original.fx
-          node.y = original.y
-          node.fy = original.fy
-        }
-      })
+  const closePanel = useCallback(() => {
+    // Cancel any running zoom animation
+    if (zoomAnimationRef.current) {
+      cancelAnimationFrame(zoomAnimationRef.current)
+      zoomAnimationRef.current = null
     }
 
-    // Clear focused node reference
-    focusedNodeRef.current = null
-
-    // Reset the original center ref to full width
-    if (originalCenterRef.current) {
-      originalCenterRef.current = { x: window.innerWidth / 2, y: originalCenterRef.current.y }
-    }
-
-    // Reset view to center on whole graph
-    setTransform({ x: 0, y: 0, k: 1 })
-
-    // Close panel - this triggers the resize effect
     setIsPanelOpen(false)
+    setFocusedParent(null)
 
-    // Gently reheat simulation for ambient motion (low alpha)
-    const simulation = simulationRef.current
-    if (simulation) {
-      simulation.alpha(0.1).alphaTarget(0.02).restart()
+    // Calculate transform that centers the center node
+    const canvas = canvasRef.current
+    const centerNode = nodesRef.current.find(n => n.id === 'blog-center')
+
+    if (canvas && centerNode) {
+      const canvasCenterX = canvas.width / 2
+      const canvasCenterY = canvas.height / 2
+      const panX = canvasCenterX - centerNode.x
+      const panY = canvasCenterY - centerNode.y
+      setTransform({ x: panX, y: panY, k: 1 })
+    } else {
+      setTransform({ x: 0, y: 0, k: 1 })
     }
 
     setTimeout(() => {
@@ -236,8 +188,8 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       setSelectedCategory(null)
       setSelectedProject(null)
       setCategoryPosts([])
-    }, 300) // Clear after animation
-  }
+    }, 300)
+  }, [])
 
   // Apply syntax highlighting when post content loads
   useEffect(() => {
@@ -248,20 +200,137 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           hljs.highlightElement(block as HTMLElement)
         })
       }
-      // Small delay to ensure DOM is ready
       setTimeout(applyHighlighting, 100)
     }
   }, [selectedPost, postLoading])
 
   const nodesRef = useRef<GraphNode[]>([])
   const linksRef = useRef<GraphLink[]>([])
-  const simulationRef = useRef<Simulation<GraphNode, GraphLink> | null>(null)
   const drawRef = useRef<() => void>(() => {})
-  const focusedNodeRef = useRef<string | null>(null)
-  // Store original node positions (full-width canvas) for proper reset
-  const originalNodePositionsRef = useRef<Map<string, { x: number; y: number; fx: number | null; fy: number | null }>>(new Map())
+  const canvasCenterRef = useRef({ x: 0, y: 0 })
 
-  // Draw function - stored in ref so simulation can access latest version
+  // Animate transform smoothly
+  const animateTransform = useCallback((targetTransform: { x: number; y: number; k: number }, duration: number) => {
+    const startTransform = { ...transform }
+    const startTime = Date.now()
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime
+      const t = Math.min(elapsed / duration, 1)
+      const eased = easeOutCubic(t)
+
+      setTransform({
+        x: lerp(startTransform.x, targetTransform.x, eased),
+        y: lerp(startTransform.y, targetTransform.y, eased),
+        k: lerp(startTransform.k, targetTransform.k, eased)
+      })
+
+      if (t < 1) {
+        requestAnimationFrame(animate)
+      }
+    }
+    animate()
+  }, [transform])
+
+  // Animate to a specific node (zoom and pan)
+  const animateToNode = useCallback((node: GraphNode, targetZoom: number) => {
+    // Cancel any running zoom animation
+    if (zoomAnimationRef.current) {
+      cancelAnimationFrame(zoomAnimationRef.current)
+      zoomAnimationRef.current = null
+    }
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const canvasWidth = canvas.width
+    const canvasHeight = canvas.height
+    const centerX = canvasWidth / 2
+    const centerY = canvasHeight / 2
+
+    // Calculate target pan to center the node
+    const targetPanX = (centerX - node.x) * targetZoom
+    const targetPanY = (centerY - node.y) * targetZoom
+
+    // Animate using functional setState to avoid stale closures
+    let startTransform: { x: number; y: number; k: number } | null = null
+    const duration = 500
+    const startTime = Date.now()
+
+    const animate = () => {
+      setTransform(prev => {
+        if (!startTransform) {
+          startTransform = { ...prev }
+        }
+
+        const elapsed = Date.now() - startTime
+        const t = Math.min(elapsed / duration, 1)
+        const eased = easeOutCubic(t)
+
+        return {
+          x: lerp(startTransform.x, targetPanX, eased),
+          y: lerp(startTransform.y, targetPanY, eased),
+          k: lerp(startTransform.k, targetZoom, eased)
+        }
+      })
+
+      if (Date.now() - startTime < duration) {
+        zoomAnimationRef.current = requestAnimationFrame(animate)
+      } else {
+        zoomAnimationRef.current = null
+      }
+    }
+    zoomAnimationRef.current = requestAnimationFrame(animate)
+  }, [])
+
+  // Return to overview (unfocus)
+  const returnToOverview = useCallback(() => {
+    // Cancel any running zoom animation FIRST
+    if (zoomAnimationRef.current) {
+      cancelAnimationFrame(zoomAnimationRef.current)
+      zoomAnimationRef.current = null
+    }
+
+    setFocusedParent(null)
+
+    // Calculate transform that centers the center node
+    const canvas = canvasRef.current
+    const centerNode = nodesRef.current.find(n => n.id === 'blog-center')
+
+    if (canvas && centerNode) {
+      const canvasCenterX = canvas.width / 2
+      const canvasCenterY = canvas.height / 2
+      // Pan to center the center node
+      const panX = canvasCenterX - centerNode.x
+      const panY = canvasCenterY - centerNode.y
+      setTransform({ x: panX, y: panY, k: 1 })
+    } else {
+      setTransform({ x: 0, y: 0, k: 1 })
+    }
+  }, [])
+
+  // Escape key handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isPanelOpen) {
+          closePanel()
+        } else if (focusedParent) {
+          returnToOverview()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isPanelOpen, focusedParent, closePanel, returnToOverview])
+
+  // Check if a node is a child of a parent
+  const isChildOf = useCallback((node: GraphNode, parentId: string): boolean => {
+    return node.parentId === parentId
+  }, [])
+
+  // Draw function
   const draw = useCallback(() => {
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
@@ -278,31 +347,70 @@ export function MindCloud({ className = '' }: MindCloudProps) {
     ctx.scale(transform.k, transform.k)
     ctx.translate(-width / 2, -height / 2)
 
+    // Determine which nodes to show with full opacity
+    const isFocused = focusedParent !== null
+
     // Draw links
     linksRef.current.forEach(link => {
-      const source = link.source as GraphNode
-      const target = link.target as GraphNode
-      if (source.x !== undefined && source.y !== undefined &&
-          target.x !== undefined && target.y !== undefined) {
-        ctx.beginPath()
-        ctx.moveTo(source.x, source.y)
-        ctx.lineTo(target.x, target.y)
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)'
-        ctx.lineWidth = 1.5
-        ctx.stroke()
+      const sourceNode = nodesRef.current.find(n => n.id === link.source)
+      const targetNode = nodesRef.current.find(n => n.id === link.target)
+      if (!sourceNode || !targetNode) return
+
+      // Determine link opacity based on focus state
+      let linkOpacity = 0.25
+      if (isFocused) {
+        const isRelevantToFocus =
+          sourceNode.id === focusedParent ||
+          targetNode.id === focusedParent ||
+          sourceNode.parentId === focusedParent ||
+          targetNode.parentId === focusedParent
+
+        linkOpacity = isRelevantToFocus ? 0.4 : 0.08
       }
+
+      ctx.beginPath()
+      ctx.moveTo(sourceNode.x, sourceNode.y)
+      ctx.lineTo(targetNode.x, targetNode.y)
+      ctx.strokeStyle = `rgba(255, 255, 255, ${linkOpacity})`
+      ctx.lineWidth = 1.5
+      ctx.stroke()
     })
 
-    // Draw nodes (Obsidian style - filled dots with text below)
+    // Draw nodes
     nodesRef.current.forEach(node => {
-      if (node.x === undefined || node.y === undefined) return
-
       const isHovered = hoveredNode?.id === node.id
-      // Use hierarchical node sizes from data
       const dotSize = node.size
 
+      // Determine node opacity based on focus state
+      let nodeOpacity = 1
+      let showLabel = false
+
+      if (node.type === 'center') {
+        // Center node - always visible, never show label
+        nodeOpacity = 1
+        showLabel = false
+      } else if (node.type === 'topic') {
+        // Category/language nodes - always visible with labels
+        nodeOpacity = isFocused && node.id !== focusedParent ? 0.3 : 1
+        showLabel = true
+      } else if (node.type === 'post') {
+        // Post/project nodes - only show labels when parent is focused
+        if (isFocused) {
+          if (node.parentId === focusedParent) {
+            nodeOpacity = 1
+            showLabel = true // Show labels for children of focused parent
+          } else {
+            nodeOpacity = 0.15
+            showLabel = false
+          }
+        } else {
+          nodeOpacity = 1
+          showLabel = false // No labels in overview mode
+        }
+      }
+
       // Glow effect for hovered
-      if (isHovered) {
+      if (isHovered && nodeOpacity > 0.3) {
         ctx.beginPath()
         ctx.arc(node.x, node.y, dotSize + 8, 0, Math.PI * 2)
         ctx.fillStyle = `${node.color}40`
@@ -312,28 +420,24 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       // Filled circle (dot)
       ctx.beginPath()
       ctx.arc(node.x, node.y, isHovered ? dotSize + 2 : dotSize, 0, Math.PI * 2)
+      ctx.globalAlpha = nodeOpacity
       ctx.fillStyle = node.color
       ctx.fill()
+      ctx.globalAlpha = 1
 
-      // Label below the dot
-      if (node.label && node.label.length > 0) {
+      // Label below the dot (conditional)
+      if (showLabel && node.label && node.label.length > 0) {
         const labelLength = node.label.length
         const baseFontSize = node.type === 'center' ? 14 : node.type === 'topic' ? 12 : 11
 
-        // Scale down font size for longer titles
         let fontSize = baseFontSize
-        if (labelLength > 50) {
-          fontSize = Math.max(8, baseFontSize - 4)
-        } else if (labelLength > 40) {
-          fontSize = Math.max(9, baseFontSize - 3)
-        } else if (labelLength > 30) {
-          fontSize = Math.max(9, baseFontSize - 2)
-        } else if (labelLength > 20) {
-          fontSize = Math.max(10, baseFontSize - 1)
-        }
+        if (labelLength > 50) fontSize = Math.max(8, baseFontSize - 4)
+        else if (labelLength > 40) fontSize = Math.max(9, baseFontSize - 3)
+        else if (labelLength > 30) fontSize = Math.max(9, baseFontSize - 2)
+        else if (labelLength > 20) fontSize = Math.max(10, baseFontSize - 1)
 
         ctx.font = `${fontSize}px system-ui, -apple-system, sans-serif`
-        ctx.fillStyle = isHovered ? '#FFFFFF' : 'rgba(255, 255, 255, 0.85)'
+        ctx.fillStyle = isHovered ? `rgba(255, 255, 255, ${nodeOpacity})` : `rgba(255, 255, 255, ${0.85 * nodeOpacity})`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'top'
 
@@ -356,7 +460,6 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         }
         if (currentLine) lines.push(currentLine)
 
-        // Limit to 3 lines, truncate last line if needed
         const displayLines = lines.slice(0, 3)
         if (lines.length > 3) {
           let lastLine = displayLines[2]
@@ -366,22 +469,140 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           displayLines[2] = lastLine + '...'
         }
 
-        // Draw each line centered
         const lineHeight = fontSize * 1.3
         const startY = node.y + dotSize + 6
         displayLines.forEach((line, i) => {
-          ctx.fillText(line, node.x!, startY + i * lineHeight)
+          ctx.fillText(line, node.x, startY + i * lineHeight)
         })
       }
     })
 
     ctx.restore()
-  }, [transform, hoveredNode])
+  }, [transform, hoveredNode, focusedParent])
 
   // Keep drawRef updated
   useEffect(() => {
     drawRef.current = draw
   }, [draw])
+
+  // Calculate static node positions
+  const calculateNodePositions = useCallback((
+    nodes: GraphNode[],
+    links: GraphLink[],
+    width: number,
+    height: number
+  ) => {
+    const centerX = width / 2
+    const centerY = height / 2
+
+    // Group nodes by parent
+    const nodesByParent: Record<string, GraphNode[]> = {}
+    nodes.forEach(node => {
+      if (node.parentId) {
+        if (!nodesByParent[node.parentId]) nodesByParent[node.parentId] = []
+        nodesByParent[node.parentId].push(node)
+      }
+    })
+
+    // Position each node based on its type and parent
+    nodes.forEach(node => {
+      if (node.type === 'center') {
+        node.targetX = centerX
+        node.targetY = centerY
+      } else if (node.type === 'topic' && node.id.startsWith('cat-')) {
+        // Main categories - already positioned with angle
+        // Keep their positions
+      } else if (node.type === 'topic' && node.id.startsWith('lang-')) {
+        // Language nodes - position in arc from Projects category
+        const projectsCat = nodes.find(n => n.id === 'cat-projects')
+        if (projectsCat) {
+          const siblings = nodes.filter(n => n.id.startsWith('lang-'))
+          const siblingIndex = siblings.indexOf(node)
+          const totalSiblings = siblings.length
+
+          // Fan out from Projects at ~120° arc
+          const arcAngle = Math.PI * 0.7 // 126° arc
+          const startAngle = (projectsCat.angle || 0) - arcAngle / 2
+          const angleStep = arcAngle / Math.max(totalSiblings - 1, 1)
+          const angle = startAngle + siblingIndex * angleStep
+
+          const radius = Math.min(width, height) * 0.20 // Distance from Projects
+          node.targetX = projectsCat.targetX + Math.cos(angle) * radius
+          node.targetY = projectsCat.targetY + Math.sin(angle) * radius
+          node.angle = angle
+        }
+      } else if (node.type === 'post' && node.parentId) {
+        // Post/project nodes - position in arc around their parent
+        const parent = nodes.find(n => n.id === node.parentId)
+        if (parent) {
+          const siblings = nodesByParent[node.parentId] || []
+          const siblingIndex = siblings.indexOf(node)
+          const totalSiblings = siblings.length
+
+          // Calculate arc based on number of siblings
+          const arcAngle = Math.min(Math.PI * 1.2, Math.PI * 0.3 * totalSiblings)
+          const radius = Math.min(width, height) * 0.15
+
+          // Start angle based on parent's angle (fan outward)
+          const parentAngle = parent.angle || 0
+          const startAngle = parentAngle - arcAngle / 2
+          const angleStep = arcAngle / Math.max(totalSiblings - 1, 1)
+          const angle = totalSiblings === 1 ? parentAngle : startAngle + siblingIndex * angleStep
+
+          node.targetX = parent.targetX + Math.cos(angle) * radius
+          node.targetY = parent.targetY + Math.sin(angle) * radius
+          node.angle = angle
+        }
+      }
+    })
+
+    // Start all nodes at center for explosion effect
+    nodes.forEach(node => {
+      node.x = centerX + (Math.random() - 0.5) * 10
+      node.y = centerY + (Math.random() - 0.5) * 10
+    })
+  }, [])
+
+  // Explosion animation
+  const animateExplosion = useCallback(() => {
+    const duration = 1500 // ms
+    const startTime = Date.now()
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime
+      const t = Math.min(elapsed / duration, 1)
+      const eased = easeOutElastic(t)
+
+      const centerX = canvasCenterRef.current.x
+      const centerY = canvasCenterRef.current.y
+
+      nodesRef.current.forEach(node => {
+        node.x = lerp(centerX, node.targetX, eased)
+        node.y = lerp(centerY, node.targetY, eased)
+      })
+
+      drawRef.current()
+
+      if (t < 1) {
+        animationRef.current = requestAnimationFrame(animate)
+      } else {
+        explosionCompleteRef.current = true
+
+        // Set the correct transform to center the graph
+        const canvas = canvasRef.current
+        const centerNode = nodesRef.current.find(n => n.id === 'blog-center')
+        if (canvas && centerNode) {
+          const canvasCenterX = canvas.width / 2
+          const canvasCenterY = canvas.height / 2
+          const panX = canvasCenterX - centerNode.x
+          const panY = canvasCenterY - centerNode.y
+          setTransform({ x: panX, y: panY, k: 1 })
+        }
+      }
+    }
+
+    animate()
+  }, [])
 
   // Fetch data and initialize - run only once
   useEffect(() => {
@@ -408,8 +629,7 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         const height = container.clientHeight || 600
         canvas.width = width
         canvas.height = height
-
-        console.log('MindCloud: Initializing with dimensions', width, height)
+        canvasCenterRef.current = { x: width / 2, y: height / 2 }
 
         // Build nodes
         const nodes: GraphNode[] = []
@@ -418,18 +638,18 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         // Color helper function
         const getCategoryColor = (name: string): string => {
           if (name.toLowerCase().includes('software') || name.toLowerCase().includes('engineering')) {
-            return '#5B2C91' // Royal Purple
+            return '#5B2C91'
           }
           if (name.toLowerCase().includes('data')) {
-            return '#2E86AB' // Blue
+            return '#2E86AB'
           }
           if (name.toLowerCase().includes('project')) {
-            return '#A23B72' // Magenta
+            return '#A23B72'
           }
-          return '#6B7280' // Gray fallback
+          return '#6B7280'
         }
 
-        // Center node (blank label - just the dot)
+        // Center node (blank label)
         nodes.push({
           id: 'blog-center',
           label: '',
@@ -438,11 +658,11 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           size: 8,
           x: width / 2,
           y: height / 2,
-          fx: width / 2,
-          fy: height / 2
+          targetX: width / 2,
+          targetY: height / 2
         })
 
-        // Category nodes (Software, Data Science, Projects) - FIXED at exact 120° intervals
+        // Category nodes
         const categoryColors: Record<string, string> = {
           'Software': '#5B2C91',
           'Data Science': '#2E86AB',
@@ -450,14 +670,12 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         }
 
         const mainCategories = ['Software', 'Data Science', 'Projects']
-        const categoryRadius = Math.min(width, height) * 0.28 // Distance from center
+        const categoryRadius = Math.min(width, height) * 0.28
 
-        // Store category positions for later use with subcategories
         const categoryPositions: Record<string, { x: number; y: number; angle: number }> = {}
 
         mainCategories.forEach((catName, index) => {
-          // Position at 120° intervals (0°, 120°, 240°), starting from top
-          const angle = (index * (2 * Math.PI / 3)) - (Math.PI / 2) // Start from top
+          const angle = (index * (2 * Math.PI / 3)) - (Math.PI / 2)
           const catX = width / 2 + Math.cos(angle) * categoryRadius
           const catY = height / 2 + Math.sin(angle) * categoryRadius
 
@@ -469,19 +687,21 @@ export function MindCloud({ className = '' }: MindCloudProps) {
             type: 'topic',
             color: categoryColors[catName],
             size: 8,
-            x: catX,
-            y: catY,
-            fx: catX, // FIXED position - categories won't move
-            fy: catY
+            x: width / 2,
+            y: height / 2,
+            targetX: catX,
+            targetY: catY,
+            angle,
+            parentId: 'blog-center'
           })
           links.push({
             source: 'blog-center',
             target: `cat-${catName.toLowerCase().replace(' ', '-')}`,
-            strength: 1.0 // Strong link to keep categories connected to center
+            strength: 1.0
           })
         })
 
-        // First pass: collect all unique languages for project subcategories
+        // Collect languages for project subcategories
         const projectLanguages = new Set<string>()
         const projectsByLanguage: Record<string, string[]> = {}
 
@@ -498,28 +718,34 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           }
         })
 
-        // Create language subcategory nodes for Projects
-        // All language nodes use the same color as Projects category for consistency
-        const LANGUAGE_NODE_COLOR = '#C44B8C' // Lighter magenta, similar to Projects
-
+        // Create language subcategory nodes
+        const LANGUAGE_NODE_COLOR = '#C44B8C'
         const projectsPos = categoryPositions['Projects']
-        const subCategoryRadius = categoryRadius * 0.5 // Distance from Projects node
         const languageArray = Array.from(projectLanguages)
+        const langArcAngle = Math.PI * 0.7
+        const langStartAngle = projectsPos.angle - langArcAngle / 2
+        const langAngleStep = langArcAngle / Math.max(languageArray.length - 1, 1)
+        const langRadius = Math.min(width, height) * 0.20
 
         languageArray.forEach((lang, index) => {
-          // Start at center for explosion effect - simulation will push to final position
+          const angle = languageArray.length === 1 ? projectsPos.angle : langStartAngle + index * langAngleStep
+          const langX = projectsPos.x + Math.cos(angle) * langRadius
+          const langY = projectsPos.y + Math.sin(angle) * langRadius
+
           nodes.push({
             id: `lang-${lang.toLowerCase()}`,
             label: lang,
-            type: 'topic', // Subcategory type
-            color: LANGUAGE_NODE_COLOR, // Same color for all language nodes
+            type: 'topic',
+            color: LANGUAGE_NODE_COLOR,
             size: 8,
-            x: width / 2 + (Math.random() - 0.5) * 10, // Slight random offset to avoid overlap
-            y: height / 2 + (Math.random() - 0.5) * 10
-            // Language nodes are NOT fixed - they float to be attracted to connected categories
+            x: width / 2,
+            y: height / 2,
+            targetX: langX,
+            targetY: langY,
+            angle,
+            parentId: 'cat-projects'
           })
 
-          // Link language node to Projects category
           links.push({
             source: 'cat-projects',
             target: `lang-${lang.toLowerCase()}`,
@@ -527,64 +753,89 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           })
         })
 
-        // Post/Project nodes - connect to their category or language subcategory
-        // Initialize positions NEAR their parent category for better initial layout
-        console.log('MindCloud: Posts and Projects', data.nodes)
+        // Post/Project nodes - grouped by parent
+        const postsByParent: Record<string, typeof data.nodes> = {}
+
         ;(data.nodes || []).forEach((post: {
           id: string
           slug: string
           title: string
-          categoryId: string | null
           categoryName: string | null
           isProject?: boolean
           projectData?: ProjectData
-        }, index: number) => {
+        }) => {
           const categoryName = post.categoryName || ''
-          const color = getCategoryColor(categoryName)
-
-          // Determine parent category for initial positioning
-          let parentPos = categoryPositions['Software'] // default
           let targetCategory = 'cat-software'
 
           if (categoryName.toLowerCase().includes('data')) {
-            parentPos = categoryPositions['Data Science']
             targetCategory = 'cat-data-science'
           } else if (categoryName.toLowerCase().includes('project')) {
-            parentPos = categoryPositions['Projects']
-            // Projects connect to their language subcategory if available
             if (post.isProject && post.projectData?.primaryLanguage) {
               targetCategory = `lang-${post.projectData.primaryLanguage.toLowerCase()}`
             } else {
               targetCategory = 'cat-projects'
             }
           } else if (categoryName.toLowerCase().includes('software') || categoryName.toLowerCase().includes('engineering')) {
-            parentPos = categoryPositions['Software']
             targetCategory = 'cat-software'
           }
 
-          // Start at center for explosion effect - simulation will push to final position
-          nodes.push({
-            id: post.id,
-            slug: post.slug,
-            label: post.title,
-            type: 'post',
-            color: color,
-            size: 8,
-            isProject: post.isProject,
-            projectData: post.projectData,
-            x: width / 2 + (Math.random() - 0.5) * 10, // Slight random offset to avoid overlap
-            y: height / 2 + (Math.random() - 0.5) * 10
-          })
+          if (!postsByParent[targetCategory]) postsByParent[targetCategory] = []
+          postsByParent[targetCategory].push(post)
+        })
 
-          links.push({
-            source: targetCategory,
-            target: post.id,
-            strength: 1.0 // Very strong link to parent category
+        // Now create post nodes with proper positioning
+        Object.entries(postsByParent).forEach(([parentId, posts]) => {
+          const parentNode = nodes.find(n => n.id === parentId)
+          if (!parentNode) return
+
+          const totalPosts = posts.length
+          const arcAngle = Math.min(Math.PI * 1.2, Math.PI * 0.3 * totalPosts)
+          const radius = Math.min(width, height) * 0.15
+          const parentAngle = parentNode.angle || 0
+          const startAngle = parentAngle - arcAngle / 2
+          const angleStep = arcAngle / Math.max(totalPosts - 1, 1)
+
+          posts.forEach((post: {
+            id: string
+            slug: string
+            title: string
+            categoryName: string | null
+            isProject?: boolean
+            projectData?: ProjectData
+          }, index: number) => {
+            const categoryName = post.categoryName || ''
+            const color = getCategoryColor(categoryName)
+
+            const angle = totalPosts === 1 ? parentAngle : startAngle + index * angleStep
+            const postX = parentNode.targetX + Math.cos(angle) * radius
+            const postY = parentNode.targetY + Math.sin(angle) * radius
+
+            nodes.push({
+              id: post.id,
+              slug: post.slug,
+              label: post.title,
+              type: 'post',
+              color: color,
+              size: 8,
+              isProject: post.isProject,
+              projectData: post.projectData,
+              x: width / 2,
+              y: height / 2,
+              targetX: postX,
+              targetY: postY,
+              angle,
+              parentId
+            })
+
+            links.push({
+              source: parentId,
+              target: post.id,
+              strength: 1.0
+            })
           })
         })
 
-        // Post-to-post backlinks and shared tag connections - stronger to cluster related content
-        // Filter out project-to-project connections (they connect via language nodes instead)
+        // Post-to-post backlinks (skip project-to-project)
         const projectNodeIds = new Set(
           (data.nodes || [])
             .filter((n: { isProject?: boolean }) => n.isProject)
@@ -592,126 +843,28 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         )
 
         ;(data.links || []).forEach((link: { source: string; target: string; strength?: number }) => {
-          // Skip if both source and target are projects
           if (projectNodeIds.has(link.source) && projectNodeIds.has(link.target)) {
-            return // Projects connect via language nodes, not directly
+            return
           }
-
           links.push({
             source: link.source,
             target: link.target,
-            strength: (link.strength || 1) * 0.9 // Strong attraction for connected nodes
+            strength: (link.strength || 1) * 0.9
           })
         })
-
-        console.log('MindCloud: Total nodes', nodes.length, 'links', links.length)
 
         nodesRef.current = nodes
         linksRef.current = links
 
-        // Create simulation with hierarchical radial layout
-        // Categories are FIXED (fx/fy) - only posts move
-        // Link distances: longer near center, shorter at edges
-        const simulation = forceSimulation<GraphNode>(nodes)
-          .force('link', forceLink<GraphNode, GraphLink>(links)
-            .id(d => d.id)
-            .distance((d) => {
-              const source = d.source as GraphNode
-              const target = d.target as GraphNode
-
-              // Blog center → main category: LONGEST
-              if (source.id === 'blog-center' || target.id === 'blog-center') {
-                return 150
-              }
-              // Main category → language subcategory: MEDIUM
-              if ((source.id.startsWith('cat-') && target.id.startsWith('lang-')) ||
-                  (target.id.startsWith('cat-') && source.id.startsWith('lang-'))) {
-                return 80
-              }
-              // Category/Language → post: MEDIUM-SHORT
-              if (source.type === 'topic' || target.type === 'topic') {
-                return 70
-              }
-              // Post to post (shared tags): SHORT - cluster together
-              return 40
-            })
-            .strength((d) => {
-              // VERY strong links - connected nodes MUST stay together
-              const str = (d as GraphLink).strength || 0.5
-              return Math.min(str * 2.0, 1.0) // Strong but capped at 1.0
-            }))
-          .force('charge', forceManyBody<GraphNode>()
-            .strength((d) => {
-              // Fixed nodes (main categories, blog center) don't need charge
-              if (d.fx !== undefined && d.fx !== null) return 0
-              // Language nodes repel slightly to spread out
-              if (d.id.startsWith('lang-')) return -60
-              // Posts repel moderately to spread out more
-              return -50
-            }))
-          // Radial force pushes nodes OUTWARD from center based on hierarchy
-          .force('radial', forceRadial<GraphNode>(
-            (d) => {
-              // Language nodes at medium distance
-              if (d.id.startsWith('lang-')) {
-                return categoryRadius * 1.3
-              }
-              // Posts at outer ring
-              if (d.type === 'post') {
-                return categoryRadius * 1.8
-              }
-              return 0
-            },
-            width / 2,
-            height / 2
-          ).strength((d) => {
-            if (d.id.startsWith('lang-')) return 0.2 // Medium push for language nodes
-            if (d.type === 'post') return 0.1 // Gentle push for posts
-            return 0
-          }))
-          .force('collision', forceCollide<GraphNode>().radius(d => {
-            // Small collision to prevent node overlap, not text overlap
-            if (d.type === 'post') return 20
-            if (d.id.startsWith('lang-')) return 15
-            return 0
-          }).strength(0.8))
-
-        simulationRef.current = simulation
-
-        simulation.on('tick', () => {
-          // Apply extremely subtle ambient floating motion
-          const time = Date.now() * 0.001 // Time in seconds
-
-          nodesRef.current.forEach((node, i) => {
-            if (node.x === undefined || node.y === undefined) return
-            if (node.fx !== null && node.fx !== undefined) return // Skip fixed nodes
-
-            // Each node gets a unique phase based on its index
-            const phase = i * 2.3
-            const floatStrength = 0.015 // Barely perceptible movement
-
-            // Very gentle oscillation
-            const offsetX = Math.sin(time * 0.15 + phase) * floatStrength
-            const offsetY = Math.cos(time * 0.12 + phase * 0.8) * floatStrength
-
-            node.vx = (node.vx || 0) * 0.9 + offsetX // Strong dampening
-            node.vy = (node.vy || 0) * 0.9 + offsetY
-          })
-
-          drawRef.current()
-        })
-
-        // Run simulation with high energy for explosion effect
-        // Slower decay (0.015) makes the explosion animation last longer
-        simulation.alpha(1).alphaDecay(0.015).restart()
-
-        // After initial explosion settles, keep simulation nearly still with minimal energy
-        setTimeout(() => {
-          simulation.alphaMin(0).alphaDecay(0.02).alphaTarget(0.005).restart()
-        }, 4000)
-
+        // Start explosion animation
         setInitialized(true)
         setLoading(false)
+
+        // Small delay then animate
+        setTimeout(() => {
+          animateExplosion()
+        }, 100)
+
       } catch (err) {
         console.error('Failed to initialize mind cloud:', err)
         setLoading(false)
@@ -719,7 +872,7 @@ export function MindCloud({ className = '' }: MindCloudProps) {
     }
 
     init()
-  }, [initialized])
+  }, [initialized, animateExplosion])
 
   // Mouse wheel zoom
   useEffect(() => {
@@ -739,28 +892,31 @@ export function MindCloud({ className = '' }: MindCloudProps) {
     return () => canvas.removeEventListener('wheel', handleWheel)
   }, [])
 
-  // Mouse drag pan
+  // Mouse drag pan and click handling
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const handleMouseDown = (e: MouseEvent) => {
-      // Check if clicking on a node
+    const getNodeAtPosition = (clientX: number, clientY: number): GraphNode | null => {
       const rect = canvas.getBoundingClientRect()
       const centerX = canvas.width / 2
       const centerY = canvas.height / 2
-      const x = (e.clientX - rect.left - transform.x - centerX) / transform.k + centerX
-      const y = (e.clientY - rect.top - transform.y - centerY) / transform.k + centerY
+      const x = (clientX - rect.left - transform.x - centerX) / transform.k + centerX
+      const y = (clientY - rect.top - transform.y - centerY) / transform.k + centerY
 
       for (const node of nodesRef.current) {
-        if (node.x === undefined || node.y === undefined) continue
         const dx = x - node.x
         const dy = y - node.y
         if (Math.sqrt(dx * dx + dy * dy) < node.size + 5) {
-          // Clicked on node, don't start drag
-          return
+          return node
         }
       }
+      return null
+    }
+
+    const handleMouseDown = (e: MouseEvent) => {
+      const node = getNodeAtPosition(e.clientX, e.clientY)
+      if (node) return // Don't start drag if clicking a node
 
       setIsDragging(true)
       setDragStart({ x: e.clientX - transform.x, y: e.clientY - transform.y })
@@ -774,24 +930,7 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           y: e.clientY - dragStart.y
         }))
       } else {
-        // Hover detection
-        const rect = canvas.getBoundingClientRect()
-        const centerX = canvas.width / 2
-        const centerY = canvas.height / 2
-        const x = (e.clientX - rect.left - transform.x - centerX) / transform.k + centerX
-        const y = (e.clientY - rect.top - transform.y - centerY) / transform.k + centerY
-
-        let found: GraphNode | null = null
-        for (const node of nodesRef.current) {
-          if (node.x === undefined || node.y === undefined) continue
-          const dx = x - node.x
-          const dy = y - node.y
-          if (Math.sqrt(dx * dx + dy * dy) < node.size + 5) {
-            found = node
-            break
-          }
-        }
-
+        const found = getNodeAtPosition(e.clientX, e.clientY)
         setHoveredNode(found)
         canvas.style.cursor = found ? 'pointer' : isDragging ? 'grabbing' : 'grab'
       }
@@ -801,41 +940,39 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       setIsDragging(false)
     }
 
-    const handleClick = async (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect()
-      const centerX = canvas.width / 2
-      const centerY = canvas.height / 2
-      const x = (e.clientX - rect.left - transform.x - centerX) / transform.k + centerX
-      const y = (e.clientY - rect.top - transform.y - centerY) / transform.k + centerY
+    const handleClick = (e: MouseEvent) => {
+      const node = getNodeAtPosition(e.clientX, e.clientY)
 
-      for (const node of nodesRef.current) {
-        if (node.x === undefined || node.y === undefined) continue
-        const dx = x - node.x
-        const dy = y - node.y
-        if (Math.sqrt(dx * dx + dy * dy) < node.size + 5) {
-          focusedNodeRef.current = node.id
+      if (!node) {
+        // Clicked empty space - return to overview if focused
+        if (focusedParent && !isPanelOpen) {
+          returnToOverview()
+        }
+        return
+      }
 
-          if (node.type === 'post' && node.slug) {
-            // Fix the node in place so it doesn't drift while reading
-            node.fx = node.x
-            node.fy = node.y
-
-            // Don't set transform here - let the panel open effect handle it
-            // The transform will be calculated AFTER the canvas resizes
-
-            // Check if this is a project node
-            if (node.isProject && node.projectData) {
-              openProject(node.projectData)
-            } else {
-              openPost(node.slug)
-            }
-          } else if (node.type === 'topic') {
-            node.fx = node.x
-            node.fy = node.y
-
-            openCategory(node.label)
+      if (node.type === 'center') {
+        // Clicked center - return to overview
+        returnToOverview()
+      } else if (node.type === 'topic') {
+        // Clicked category or language - focus on it
+        setFocusedParent(node.id)
+        animateToNode(node, 2.0)
+      } else if (node.type === 'post') {
+        if (focusedParent && node.parentId === focusedParent) {
+          // Already focused on this cluster - open the content
+          if (node.isProject && node.projectData) {
+            openProject(node.projectData)
+          } else if (node.slug) {
+            openPost(node.slug)
           }
-          break
+        } else {
+          // Not focused or different cluster - focus on parent first
+          const parentNode = nodesRef.current.find(n => n.id === node.parentId)
+          if (parentNode) {
+            setFocusedParent(parentNode.id)
+            animateToNode(parentNode, 2.0)
+          }
         }
       }
     }
@@ -851,9 +988,9 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       window.removeEventListener('mouseup', handleMouseUp)
       canvas.removeEventListener('click', handleClick)
     }
-  }, [isDragging, dragStart, transform])
+  }, [isDragging, dragStart, transform, focusedParent, isPanelOpen, animateToNode, returnToOverview])
 
-  // Touch state refs (persist across renders)
+  // Touch state refs
   const touchStateRef = useRef({
     lastTouchDistance: 0,
     touchStartPos: { x: 0, y: 0 },
@@ -866,6 +1003,23 @@ export function MindCloud({ className = '' }: MindCloudProps) {
     const canvas = canvasRef.current
     if (!canvas) return
 
+    const getNodeAtTouchPosition = (clientX: number, clientY: number): GraphNode | null => {
+      const rect = canvas.getBoundingClientRect()
+      const centerX = canvas.width / 2
+      const centerY = canvas.height / 2
+      const x = (clientX - rect.left - transform.x - centerX) / transform.k + centerX
+      const y = (clientY - rect.top - transform.y - centerY) / transform.k + centerY
+
+      for (const node of nodesRef.current) {
+        const dx = x - node.x
+        const dy = y - node.y
+        if (Math.sqrt(dx * dx + dy * dy) < node.size + 10) {
+          return node
+        }
+      }
+      return null
+    }
+
     const handleTouchStart = (e: TouchEvent) => {
       const state = touchStateRef.current
 
@@ -874,27 +1028,9 @@ export function MindCloud({ className = '' }: MindCloudProps) {
         state.touchStartPos = { x: touch.clientX, y: touch.clientY }
         state.initialTransform = { x: transform.x, y: transform.y }
 
-        // Check if touching a node
-        const rect = canvas.getBoundingClientRect()
-        const centerX = canvas.width / 2
-        const centerY = canvas.height / 2
-        const nodeX = (touch.clientX - rect.left - transform.x - centerX) / transform.k + centerX
-        const nodeY = (touch.clientY - rect.top - transform.y - centerY) / transform.k + centerY
-
-        let touchedNode = false
-        for (const node of nodesRef.current) {
-          if (node.x === undefined || node.y === undefined) continue
-          const dx = nodeX - node.x
-          const dy = nodeY - node.y
-          if (Math.sqrt(dx * dx + dy * dy) < node.size + 10) {
-            touchedNode = true
-            break
-          }
-        }
-
-        state.isTouchDragging = !touchedNode
+        const node = getNodeAtTouchPosition(touch.clientX, touch.clientY)
+        state.isTouchDragging = !node
       } else if (e.touches.length === 2) {
-        // Pinch zoom start
         const dx = e.touches[0].clientX - e.touches[1].clientX
         const dy = e.touches[0].clientY - e.touches[1].clientY
         state.lastTouchDistance = Math.sqrt(dx * dx + dy * dy)
@@ -907,7 +1043,6 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       const state = touchStateRef.current
 
       if (e.touches.length === 1 && state.isTouchDragging) {
-        // Pan
         const touch = e.touches[0]
         const deltaX = touch.clientX - state.touchStartPos.x
         const deltaY = touch.clientY - state.touchStartPos.y
@@ -918,7 +1053,6 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           y: state.initialTransform.y + deltaY
         }))
       } else if (e.touches.length === 2) {
-        // Pinch zoom
         const dx = e.touches[0].clientX - e.touches[1].clientX
         const dy = e.touches[0].clientY - e.touches[1].clientY
         const distance = Math.sqrt(dx * dx + dy * dy)
@@ -938,36 +1072,31 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       const state = touchStateRef.current
 
       if (e.changedTouches.length === 1 && !state.isTouchDragging) {
-        // Tap on node
         const touch = e.changedTouches[0]
-        const rect = canvas.getBoundingClientRect()
-        const centerX = canvas.width / 2
-        const centerY = canvas.height / 2
-        const nodeX = (touch.clientX - rect.left - transform.x - centerX) / transform.k + centerX
-        const nodeY = (touch.clientY - rect.top - transform.y - centerY) / transform.k + centerY
+        const node = getNodeAtTouchPosition(touch.clientX, touch.clientY)
 
-        for (const node of nodesRef.current) {
-          if (node.x === undefined || node.y === undefined) continue
-          const dx = nodeX - node.x
-          const dy = nodeY - node.y
-          if (Math.sqrt(dx * dx + dy * dy) < node.size + 10) {
-            focusedNodeRef.current = node.id
-
-            if (node.type === 'post' && node.slug) {
-              node.fx = node.x
-              node.fy = node.y
-              // Check if this is a project node
-              if (node.isProject && node.projectData) {
-                openProject(node.projectData)
-              } else {
-                openPost(node.slug)
-              }
-            } else if (node.type === 'topic') {
-              node.fx = node.x
-              node.fy = node.y
-              openCategory(node.label)
+        if (!node) {
+          if (focusedParent && !isPanelOpen) {
+            returnToOverview()
+          }
+        } else if (node.type === 'center') {
+          returnToOverview()
+        } else if (node.type === 'topic') {
+          setFocusedParent(node.id)
+          animateToNode(node, 2.0)
+        } else if (node.type === 'post') {
+          if (focusedParent && node.parentId === focusedParent) {
+            if (node.isProject && node.projectData) {
+              openProject(node.projectData)
+            } else if (node.slug) {
+              openPost(node.slug)
             }
-            break
+          } else {
+            const parentNode = nodesRef.current.find(n => n.id === node.parentId)
+            if (parentNode) {
+              setFocusedParent(parentNode.id)
+              animateToNode(parentNode, 2.0)
+            }
           }
         }
       }
@@ -985,9 +1114,9 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       canvas.removeEventListener('touchmove', handleTouchMove)
       canvas.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [transform, openPost, openCategory])
+  }, [transform, focusedParent, isPanelOpen, animateToNode, returnToOverview])
 
-  // Redraw on transform/hover change
+  // Redraw on transform/hover/focus change
   useEffect(() => {
     draw()
   }, [draw])
@@ -1000,17 +1129,28 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       if (!canvas || !container) return
       canvas.width = container.clientWidth
       canvas.height = container.clientHeight
+      canvasCenterRef.current = { x: canvas.width / 2, y: canvas.height / 2 }
+
+      // Recenter the graph if in overview mode (not focused)
+      if (!focusedParent && explosionCompleteRef.current) {
+        const centerNode = nodesRef.current.find(n => n.id === 'blog-center')
+        if (centerNode) {
+          const canvasCenterX = canvas.width / 2
+          const canvasCenterY = canvas.height / 2
+          const panX = canvasCenterX - centerNode.x
+          const panY = canvasCenterY - centerNode.y
+          setTransform({ x: panX, y: panY, k: 1 })
+        }
+      }
+
       drawRef.current()
     }
 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [focusedParent])
 
-  // Store the original center position for shifting calculations
-  const originalCenterRef = useRef<{ x: number; y: number } | null>(null)
-
-  // Trigger resize and shift all nodes when panel opens/closes
+  // Handle panel open/close with canvas resize
   useEffect(() => {
     const canvas = canvasRef.current
     const container = containerRef.current
@@ -1019,99 +1159,37 @@ export function MindCloud({ className = '' }: MindCloudProps) {
     const fullWidth = window.innerWidth
     const newContainerWidth = isPanelOpen ? fullWidth / 2 : fullWidth
 
-    // When panel is OPENING, store original positions before shifting
-    if (isPanelOpen && originalNodePositionsRef.current.size === 0) {
-      nodesRef.current.forEach(node => {
-        originalNodePositionsRef.current.set(node.id, {
-          x: node.x ?? 0,
-          y: node.y ?? 0,
-          fx: node.fx ?? null,
-          fy: node.fy ?? null
-        })
-      })
-    }
+    canvas.width = newContainerWidth
+    canvas.height = container.clientHeight
+    canvasCenterRef.current = { x: newContainerWidth / 2, y: container.clientHeight / 2 }
 
-    // When panel is CLOSING, just resize canvas - positions already restored in closePanel
-    if (!isPanelOpen) {
-      // Clear stored positions since we're back to full width
-      originalNodePositionsRef.current.clear()
+    // Recenter based on panel state and focus
+    if (explosionCompleteRef.current) {
+      const canvasCenterX = newContainerWidth / 2
+      const canvasCenterY = container.clientHeight / 2
 
-      // Just update canvas size
-      canvas.width = newContainerWidth
-      canvas.height = container.clientHeight
-      drawRef.current()
-      return
-    }
-
-    // Panel is opening - shift nodes to new center
-    const shiftNodes = (applyFocusTransform: boolean) => {
-      const newCenterX = newContainerWidth / 2
-      const newCenterY = container.clientHeight / 2
-
-      // Store original center on first render
-      if (!originalCenterRef.current) {
-        originalCenterRef.current = { x: fullWidth / 2, y: newCenterY }
-      }
-
-      const oldCenterX = originalCenterRef.current.x
-      const shiftX = newCenterX - oldCenterX
-
-      // Shift nodes to new center
-      const focusedId = focusedNodeRef.current
-      nodesRef.current.forEach(node => {
-        // Don't shift the currently focused node - keep it where the user clicked
-        if (focusedId && node.id === focusedId) {
-          return
+      if (isPanelOpen && focusedParent) {
+        // Panel is open while focused - recenter on the focused node
+        const focusedNode = nodesRef.current.find(n => n.id === focusedParent)
+        if (focusedNode) {
+          const currentZoom = 2.0 // We zoom to 2.0 when focusing
+          const panX = (canvasCenterX - focusedNode.x) * currentZoom
+          const panY = (canvasCenterY - focusedNode.y) * currentZoom
+          setTransform({ x: panX, y: panY, k: currentZoom })
         }
-        // Shift fixed nodes (categories, center) - they stay fixed but at new positions
-        if (node.fx !== null && node.fx !== undefined) {
-          node.fx += shiftX
-          node.x = node.fx // Keep x in sync with fx
-        } else if (node.type === 'post' && typeof node.x === 'number') {
-          // Only shift unfixed posts' actual positions
-          node.x += shiftX
-        }
-      })
-
-      // Update original center for next shift
-      originalCenterRef.current = { x: newCenterX, y: newCenterY }
-
-      // Update canvas size
-      canvas.width = newContainerWidth
-      canvas.height = container.clientHeight
-
-      // Apply focus transform AFTER canvas has resized - center on the focused node
-      if (applyFocusTransform && focusedId) {
-        const focusedNode = nodesRef.current.find(n => n.id === focusedId)
-        if (focusedNode && focusedNode.x !== undefined && focusedNode.y !== undefined) {
-          const newZoom = 1.8
-          // Calculate pan to center the focused node in the new canvas
-          const panX = (newCenterX - focusedNode.x) * newZoom
-          const panY = (newCenterY - focusedNode.y) * newZoom
-          setTransform({ x: panX, y: panY, k: newZoom })
+      } else if (!isPanelOpen && !focusedParent) {
+        // Panel closed and in overview - recenter on center node
+        const centerNode = nodesRef.current.find(n => n.id === 'blog-center')
+        if (centerNode) {
+          const panX = canvasCenterX - centerNode.x
+          const panY = canvasCenterY - centerNode.y
+          setTransform({ x: panX, y: panY, k: 1 })
         }
       }
-
-      // Keep simulation calm - NO center force (categories are fixed)
-      const simulation = simulationRef.current
-      if (simulation) {
-        simulation.force('center', null) // Never use center force
-        simulation.alpha(0.1).alphaTarget(0.02).restart()
-      }
-
-      drawRef.current()
     }
 
-    // Shift immediately (no transform yet), then after CSS transition (apply transform on final call)
-    shiftNodes(false)
-    const t1 = setTimeout(() => shiftNodes(false), 150)
-    const t2 = setTimeout(() => shiftNodes(true), 350)
-
-    return () => {
-      clearTimeout(t1)
-      clearTimeout(t2)
-    }
-  }, [isPanelOpen, initialized])
+    drawRef.current()
+  }, [isPanelOpen, initialized, focusedParent])
 
   return (
     <div className={`flex ${className}`} style={{ background: '#000000' }}>
@@ -1140,17 +1218,29 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           </div>
         )}
 
+        {/* Back to Overview button - shown when focused but panel not open */}
+        {!loading && focusedParent && !isPanelOpen && (
+          <button
+            onClick={returnToOverview}
+            className="absolute top-4 right-4 px-4 py-2 flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
+            style={{ background: 'rgba(20, 20, 20, 0.9)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.1)' }}
+          >
+            <ArrowLeft size={16} />
+            Overview
+          </button>
+        )}
+
         {/* Controls hint */}
-        {!loading && !isPanelOpen && (
+        {!loading && !isPanelOpen && !focusedParent && (
           <div
             className="absolute bottom-4 right-4 px-3 py-2 sm:px-4 text-xs sm:text-sm text-gray-400"
             style={{ background: 'rgba(20, 20, 20, 0.9)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.1)' }}
           >
-            {isMobile ? 'Pinch to zoom · Drag to pan' : 'Scroll to zoom · Drag to pan'}
+            {isMobile ? 'Tap category to focus · Pinch to zoom' : 'Click category to focus · Scroll to zoom'}
           </div>
         )}
 
-        {/* Legend - hide on mobile when panel is open */}
+        {/* Legend */}
         {!loading && !(isMobile && isPanelOpen) && (
           <div
             className="absolute top-4 left-4 px-3 py-2 sm:px-4 sm:py-3"
