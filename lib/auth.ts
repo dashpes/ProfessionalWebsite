@@ -1,10 +1,16 @@
 import { NextRequest } from 'next/server'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this'
+const JWT_SECRET = process.env.JWT_SECRET
 
 export function verifyAdminToken(request: NextRequest): { valid: boolean; admin?: boolean } {
   try {
+    // Fail securely if JWT_SECRET not configured
+    if (!JWT_SECRET) {
+      console.error('JWT_SECRET not configured')
+      return { valid: false }
+    }
+
     const authHeader = request.headers.get('authorization')
     const token = authHeader?.replace('Bearer ', '')
 

@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123'
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this'
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
+const JWT_SECRET = process.env.JWT_SECRET
 
 export async function POST(request: NextRequest) {
   try {
+    // Fail securely if secrets not configured
+    if (!ADMIN_PASSWORD || !JWT_SECRET) {
+      console.error('ADMIN_PASSWORD or JWT_SECRET not configured')
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
     const { password } = await request.json()
 
     if (!password) {
