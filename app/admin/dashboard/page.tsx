@@ -34,6 +34,7 @@ interface BlogPost {
 }
 import { Trash2, Edit, Plus, Save, LogOut, Eye, Heart, Mail, Send } from 'lucide-react'
 import { ImageUpload } from '../components/image-upload'
+import { DocumentUpload } from '../components/document-upload'
 import GitHubSync from '../components/github-sync'
 import { BlogPostForm } from '../components/blog-post-form'
 import { EditableProjectCard } from '../components/editable-project-card'
@@ -72,6 +73,10 @@ export default function AdminDashboard() {
   const [sendingCampaign, setSendingCampaign] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [previewHtml, setPreviewHtml] = useState('')
+
+  // Document state
+  const [documentUrl, setDocumentUrl] = useState('')
+  const [documentFileName, setDocumentFileName] = useState('')
 
   const router = useRouter()
 
@@ -559,6 +564,7 @@ export default function AdminDashboard() {
           <TabsList className="bg-gray-800">
             <TabsTrigger value="projects">Projects</TabsTrigger>
             <TabsTrigger value="blog">Blog</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="github">GitHub Sync</TabsTrigger>
@@ -1065,6 +1071,40 @@ export default function AdminDashboard() {
                     {blogPosts.length === 0 && (
                       <p className="text-gray-400 text-center py-8">No blog posts yet. Create your first post!</p>
                     )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="documents" className="space-y-6">
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader>
+                <CardTitle>Portfolio Document</CardTitle>
+                <p className="text-sm text-gray-400 mt-1">
+                  Upload a .docx file to display on your portfolio. Visitors can view it embedded or download it.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <DocumentUpload
+                  value={documentUrl}
+                  fileName={documentFileName}
+                  onChange={(url, name) => {
+                    setDocumentUrl(url)
+                    setDocumentFileName(name)
+                  }}
+                  label="Upload Document"
+                />
+
+                {documentUrl && (
+                  <div className="p-4 bg-gray-800 rounded-lg border border-gray-600">
+                    <h4 className="font-medium mb-2">Document Preview Link</h4>
+                    <p className="text-sm text-gray-400 mb-2">
+                      Share this link to let visitors view your document:
+                    </p>
+                    <code className="block bg-gray-900 p-2 rounded text-sm text-blue-400 break-all">
+                      {typeof window !== 'undefined' ? `${window.location.origin}/document?file=${encodeURIComponent(documentUrl)}&name=${encodeURIComponent(documentFileName)}` : ''}
+                    </code>
                   </div>
                 )}
               </CardContent>
