@@ -24,10 +24,13 @@ export function DocumentUpload({ value, fileName, onChange, label = "Document" }
     const file = event.target.files?.[0]
     if (!file) return
 
-    // Validate file type - only .docx
-    const allowedTypes = ['application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    // Validate file type - .docx and .pdf
+    const allowedTypes = [
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/pdf'
+    ]
     if (!allowedTypes.includes(file.type)) {
-      toast.error('Please select a valid .docx file')
+      toast.error('Please select a valid .docx or .pdf file')
       return
     }
 
@@ -119,7 +122,7 @@ export function DocumentUpload({ value, fileName, onChange, label = "Document" }
           ) : (
             <>
               <Upload className="w-4 h-4 mr-2" />
-              Upload .docx
+              Upload Document
             </>
           )}
         </Button>
@@ -127,14 +130,14 @@ export function DocumentUpload({ value, fileName, onChange, label = "Document" }
         <input
           ref={fileInputRef}
           type="file"
-          accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          accept=".docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
           onChange={handleFileSelect}
           className="hidden"
         />
       </div>
 
       <p className="text-xs text-gray-400">
-        Only .docx files are supported. Maximum size: 10MB.
+        Supported formats: .docx, .pdf. Maximum size: 10MB.
       </p>
     </div>
   )

@@ -10,12 +10,21 @@ interface DocxViewerProps {
   className?: string
 }
 
-export function DocxViewer({ url, fileName = 'document.docx', className = '' }: DocxViewerProps) {
+export function DocxViewer({ url, fileName = 'document', className = '' }: DocxViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Detect file type from URL or filename
+  const isPdf = url.toLowerCase().endsWith('.pdf') || fileName.toLowerCase().endsWith('.pdf')
+
   useEffect(() => {
+    // For PDFs, we use iframe which loads automatically
+    if (isPdf) {
+      setLoading(false)
+      return
+    }
+
     const loadDocument = async () => {
       if (!containerRef.current) return
 
@@ -62,7 +71,7 @@ export function DocxViewer({ url, fileName = 'document.docx', className = '' }: 
     }
 
     loadDocument()
-  }, [url])
+  }, [url, isPdf])
 
   const handleDownload = () => {
     const link = document.createElement('a')
@@ -93,9 +102,9 @@ export function DocxViewer({ url, fileName = 'document.docx', className = '' }: 
       </div>
 
       {/* Document viewer */}
-      <div className="relative min-h-[500px] overflow-auto p-4">
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80">
+      <div className="relative min-h-[500px] overflow-auto">
+        {loading && !isPdf && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 z-10">
             <div className="flex flex-col items-center gap-2">
               <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
               <span className="text-sm text-muted-foreground">Loading document...</span>
@@ -113,10 +122,20 @@ export function DocxViewer({ url, fileName = 'document.docx', className = '' }: 
           </div>
         )}
 
-        <div
-          ref={containerRef}
-          className="docx-viewer-container"
-        />
+        {isPdf ? (
+          // PDF viewer using iframe (browsers have built-in PDF viewers)
+          <iframe
+            src={url}
+            className="w-full h-[600px] border-0"
+            title={fileName}
+          />
+        ) : (
+          // DOCX viewer container
+          <div
+            ref={containerRef}
+            className="docx-viewer-container p-4"
+          />
+        )}
       </div>
 
       {/* Styles for docx-preview */}

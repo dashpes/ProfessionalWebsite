@@ -17,12 +17,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    // Validate file type - only allow .docx
+    // Validate file type - allow .docx and .pdf
     const allowedTypes = [
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/pdf'
     ]
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: 'Invalid file type. Only .docx files are allowed.' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid file type. Only .docx and .pdf files are allowed.' }, { status: 400 })
     }
 
     // Validate file size (10MB max for documents)
