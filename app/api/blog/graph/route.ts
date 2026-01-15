@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/database'
-import { calculateTagConnections, GraphNode, GraphLink, GraphData, ProjectData } from '@/lib/graph-utils'
+import { calculateTagConnections, GraphNode, GraphLink, GraphData, ProjectData, DocumentData } from '@/lib/graph-utils'
 
 export const revalidate = 3600 // Cache for 1 hour
 
@@ -64,6 +64,28 @@ export async function GET() {
       },
       orderBy: {
         displayOrder: 'asc'
+      }
+    })
+
+    // Fetch all published documents with their categories and tags
+    const documents = await db.document.findMany({
+      where: {
+        status: 'PUBLISHED'
+      },
+      include: {
+        categories: {
+          include: {
+            category: true
+          }
+        },
+        tags: {
+          include: {
+            tag: true
+          }
+        }
+      },
+      orderBy: {
+        publishedAt: 'desc'
       }
     })
 
@@ -142,8 +164,38 @@ export async function GET() {
       }
     })
 
+    // Transform documents to graph nodes
+    const documentNodes: GraphNode[] = documents.map(doc => {
+      const firstCategory = doc.categories[0]?.category
+      const documentData: DocumentData = {
+        id: doc.id,
+        title: doc.title,
+        excerpt: doc.excerpt,
+        fileUrl: doc.fileUrl,
+        fileName: doc.fileName,
+        coverImage: doc.coverImage,
+        viewCount: doc.viewCount
+      }
+
+      return {
+        id: `document-${doc.id}`,
+        slug: doc.slug,
+        title: doc.title,
+        excerpt: doc.excerpt,
+        viewCount: doc.viewCount,
+        categoryId: firstCategory?.id || null,
+        categoryName: firstCategory?.name || null,
+        categoryColor: firstCategory?.color || '#10B981', // Green default for documents
+        tagIds: doc.tags.map(t => t.tag.id),
+        tagNames: doc.tags.map(t => t.tag.name),
+        publishedAt: doc.publishedAt?.toISOString() || null,
+        isDocument: true,
+        documentData
+      }
+    })
+
     // Combine all nodes
-    const nodes = [...blogNodes, ...projectNodes]
+    const nodes = [...blogNodes, ...projectNodes, ...documentNodes]
 
     // Calculate tag-based connections (includes project-blog connections)
     const tagLinks = calculateTagConnections(nodes)

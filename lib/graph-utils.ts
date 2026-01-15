@@ -19,6 +19,16 @@ export interface ProjectData {
   technologyNames: string[]
 }
 
+export interface DocumentData {
+  id: string
+  title: string
+  excerpt: string | null
+  fileUrl: string
+  fileName: string
+  coverImage: string | null
+  viewCount: number
+}
+
 export interface GraphNode {
   id: string
   slug: string
@@ -33,6 +43,8 @@ export interface GraphNode {
   publishedAt: string | null
   isProject?: boolean
   projectData?: ProjectData
+  isDocument?: boolean
+  documentData?: DocumentData
 }
 
 export interface GraphLink {

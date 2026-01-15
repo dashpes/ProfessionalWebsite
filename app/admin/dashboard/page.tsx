@@ -77,6 +77,37 @@ export default function AdminDashboard() {
   // Document state
   const [documentUrl, setDocumentUrl] = useState('')
   const [documentFileName, setDocumentFileName] = useState('')
+  const [documents, setDocuments] = useState<Array<{
+    id: string
+    slug: string
+    title: string
+    excerpt: string | null
+    fileUrl: string
+    fileName: string
+    coverImage: string | null
+    status: 'DRAFT' | 'PUBLISHED'
+    featured: boolean
+    viewCount: number
+    publishedAt: string | null
+    categories: Array<{ category: { id: string; name: string } }>
+    tags: Array<{ tag: { id: string; name: string } }>
+  }>>([])
+  const [documentsLoading, setDocumentsLoading] = useState(false)
+  const [editingDocument, setEditingDocument] = useState<{
+    id?: string
+    title: string
+    slug: string
+    excerpt: string
+    fileUrl: string
+    fileName: string
+    coverImage: string
+    status: 'DRAFT' | 'PUBLISHED'
+    featured: boolean
+    categoryIds: string[]
+    tagIds: string[]
+  } | null>(null)
+  const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false)
+  const [savingDocument, setSavingDocument] = useState(false)
 
   const router = useRouter()
 
@@ -354,6 +385,131 @@ export default function AdminDashboard() {
       fetchNewsletterData()
     }
   }, [fetchNewsletterData])
+
+  // Fetch documents
+  const fetchDocuments = useCallback(async () => {
+    setDocumentsLoading(true)
+    try {
+      const token = localStorage.getItem('admin-token')
+      const response = await fetch('/api/admin/documents', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setDocuments(data.documents)
+      } else {
+        toast.error('Failed to load documents')
+      }
+    } catch {
+      toast.error('Failed to load documents')
+    } finally {
+      setDocumentsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin-token')
+    if (token) {
+      fetchDocuments()
+    }
+  }, [fetchDocuments])
+
+  // Document CRUD functions
+  const openDocumentDialog = (doc?: typeof documents[0]) => {
+    if (doc) {
+      setEditingDocument({
+        id: doc.id,
+        title: doc.title,
+        slug: doc.slug,
+        excerpt: doc.excerpt || '',
+        fileUrl: doc.fileUrl,
+        fileName: doc.fileName,
+        coverImage: doc.coverImage || '',
+        status: doc.status,
+        featured: doc.featured,
+        categoryIds: doc.categories.map(c => c.category.id),
+        tagIds: doc.tags.map(t => t.tag.id)
+      })
+    } else {
+      setEditingDocument({
+        title: '',
+        slug: '',
+        excerpt: '',
+        fileUrl: documentUrl,
+        fileName: documentFileName,
+        coverImage: '',
+        status: 'DRAFT',
+        featured: false,
+        categoryIds: [],
+        tagIds: []
+      })
+    }
+    setIsDocumentDialogOpen(true)
+  }
+
+  const saveDocument = async () => {
+    if (!editingDocument) return
+    if (!editingDocument.title || !editingDocument.slug || !editingDocument.fileUrl) {
+      toast.error('Please fill in title, slug, and upload a file')
+      return
+    }
+
+    setSavingDocument(true)
+    try {
+      const token = localStorage.getItem('admin-token')
+      const isUpdate = !!editingDocument.id
+
+      const response = await fetch(
+        isUpdate ? `/api/admin/documents/${editingDocument.id}` : '/api/admin/documents',
+        {
+          method: isUpdate ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify(editingDocument)
+        }
+      )
+
+      if (response.ok) {
+        toast.success(`Document ${isUpdate ? 'updated' : 'created'} successfully!`)
+        setIsDocumentDialogOpen(false)
+        setEditingDocument(null)
+        setDocumentUrl('')
+        setDocumentFileName('')
+        fetchDocuments()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || `Failed to ${isUpdate ? 'update' : 'create'} document`)
+      }
+    } catch {
+      toast.error('Failed to save document')
+    } finally {
+      setSavingDocument(false)
+    }
+  }
+
+  const deleteDocument = async (documentId: string) => {
+    if (!confirm('Are you sure you want to delete this document?')) return
+
+    const token = localStorage.getItem('admin-token')
+    try {
+      const response = await fetch(`/api/admin/documents/${documentId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        toast.success('Document deleted successfully!')
+        fetchDocuments()
+      } else {
+        toast.error('Failed to delete document')
+      }
+    } catch {
+      toast.error('Failed to delete document')
+    }
+  }
 
   const deleteSubscriber = async (subscriberId: string) => {
     if (!confirm('Are you sure you want to delete this subscriber?')) return
@@ -1078,14 +1234,19 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-6">
+            {/* Upload New Document */}
             <Card className="bg-gray-900 border-gray-700">
               <CardHeader>
-                <CardTitle>Portfolio Document</CardTitle>
-                <p className="text-sm text-gray-400 mt-1">
-                  Upload a .docx file to display on your portfolio. Visitors can view it embedded or download it.
-                </p>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Upload Document</CardTitle>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Upload a .docx file, then create a document entry to display it on the Mind Cloud.
+                    </p>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4">
                 <DocumentUpload
                   value={documentUrl}
                   fileName={documentFileName}
@@ -1093,18 +1254,83 @@ export default function AdminDashboard() {
                     setDocumentUrl(url)
                     setDocumentFileName(name)
                   }}
-                  label="Upload Document"
+                  label="Upload .docx File"
                 />
 
                 {documentUrl && (
-                  <div className="p-4 bg-gray-800 rounded-lg border border-gray-600">
-                    <h4 className="font-medium mb-2">Document Preview Link</h4>
-                    <p className="text-sm text-gray-400 mb-2">
-                      Share this link to let visitors view your document:
-                    </p>
-                    <code className="block bg-gray-900 p-2 rounded text-sm text-blue-400 break-all">
-                      {typeof window !== 'undefined' ? `${window.location.origin}/document?file=${encodeURIComponent(documentUrl)}&name=${encodeURIComponent(documentFileName)}` : ''}
-                    </code>
+                  <Button onClick={() => openDocumentDialog()} className="bg-purple-600 hover:bg-purple-700">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Document Entry
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Existing Documents */}
+            <Card className="bg-gray-900 border-gray-700">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Documents</CardTitle>
+                  <Badge className="bg-emerald-600">{documents.length} total</Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {documentsLoading ? (
+                  <div className="text-center py-8">Loading documents...</div>
+                ) : (
+                  <div className="space-y-4">
+                    {documents.map((doc) => (
+                      <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold">{doc.title}</h3>
+                            {doc.featured && <Badge className="bg-purple-600">Featured</Badge>}
+                            <Badge
+                              variant="outline"
+                              className={doc.status === 'PUBLISHED' ? 'border-green-500 text-green-400' : 'border-yellow-500 text-yellow-400'}
+                            >
+                              {doc.status}
+                            </Badge>
+                            <div className="flex items-center gap-1 text-gray-400 text-sm">
+                              <Eye className="w-3 h-3" />
+                              {doc.viewCount}
+                            </div>
+                          </div>
+                          {doc.excerpt && (
+                            <p className="text-gray-400 text-sm mb-2 line-clamp-2">{doc.excerpt}</p>
+                          )}
+                          <div className="flex gap-2 mb-2">
+                            {doc.categories?.map((cat) => (
+                              <span key={cat.category.id} className="bg-blue-700 px-2 py-1 rounded text-xs">
+                                {cat.category.name}
+                              </span>
+                            ))}
+                            {doc.tags?.map((tag) => (
+                              <span key={tag.tag.id} className="bg-green-700 px-2 py-1 rounded text-xs">
+                                {tag.tag.name}
+                              </span>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            File: {doc.fileName}
+                            {doc.publishedAt && ` • Published: ${new Date(doc.publishedAt).toLocaleDateString()}`}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={() => openDocumentDialog(doc)} className="bg-blue-600 hover:bg-blue-700">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" onClick={() => deleteDocument(doc.id)} className="bg-red-600 hover:bg-red-700">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    {documents.length === 0 && (
+                      <p className="text-gray-400 text-center py-8">
+                        No documents yet. Upload a file above to get started!
+                      </p>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -1520,6 +1746,112 @@ export default function AdminDashboard() {
                 Close
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Document Edit Dialog */}
+        <Dialog open={isDocumentDialogOpen} onOpenChange={setIsDocumentDialogOpen}>
+          <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingDocument?.id ? 'Edit Document' : 'Create Document'}
+              </DialogTitle>
+            </DialogHeader>
+            {editingDocument && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="docTitle">Title</Label>
+                  <Input
+                    id="docTitle"
+                    value={editingDocument.title}
+                    onChange={(e) => setEditingDocument({ ...editingDocument, title: e.target.value })}
+                    className="bg-gray-800 border-gray-600"
+                    placeholder="Document title"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="docSlug">Slug (URL-friendly name)</Label>
+                  <Input
+                    id="docSlug"
+                    value={editingDocument.slug}
+                    onChange={(e) => setEditingDocument({ ...editingDocument, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                    className="bg-gray-800 border-gray-600"
+                    placeholder="my-document"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="docExcerpt">Excerpt (optional)</Label>
+                  <Textarea
+                    id="docExcerpt"
+                    value={editingDocument.excerpt}
+                    onChange={(e) => setEditingDocument({ ...editingDocument, excerpt: e.target.value })}
+                    className="bg-gray-800 border-gray-600"
+                    rows={3}
+                    placeholder="Brief description of the document..."
+                  />
+                </div>
+
+                <div>
+                  <Label>Document File</Label>
+                  <DocumentUpload
+                    value={editingDocument.fileUrl}
+                    fileName={editingDocument.fileName}
+                    onChange={(url, name) => setEditingDocument({ ...editingDocument, fileUrl: url, fileName: name })}
+                  />
+                </div>
+
+                <ImageUpload
+                  value={editingDocument.coverImage}
+                  onChange={(url) => setEditingDocument({ ...editingDocument, coverImage: url })}
+                  label="Cover Image (optional)"
+                />
+
+                <div>
+                  <Label htmlFor="docStatus">Status</Label>
+                  <select
+                    id="docStatus"
+                    value={editingDocument.status}
+                    onChange={(e) => setEditingDocument({ ...editingDocument, status: e.target.value as 'DRAFT' | 'PUBLISHED' })}
+                    className="w-full bg-gray-800 border-gray-600 rounded-md p-2 text-white"
+                  >
+                    <option value="DRAFT">Draft</option>
+                    <option value="PUBLISHED">Published</option>
+                  </select>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Only published documents appear on the Mind Cloud.
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="docFeatured"
+                    checked={editingDocument.featured}
+                    onCheckedChange={(checked) => setEditingDocument({ ...editingDocument, featured: checked })}
+                  />
+                  <Label htmlFor="docFeatured">Featured Document</Label>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button
+                    onClick={() => setIsDocumentDialogOpen(false)}
+                    variant="outline"
+                    className="border-gray-600 text-black hover:bg-gray-100"
+                    disabled={savingDocument}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={saveDocument}
+                    className="bg-purple-600 hover:bg-purple-700"
+                    disabled={savingDocument}
+                  >
+                    {savingDocument ? 'Saving...' : 'Save Document'}
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

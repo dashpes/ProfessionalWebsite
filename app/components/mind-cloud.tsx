@@ -20,6 +20,16 @@ interface ProjectData {
   technologyNames: string[]
 }
 
+interface DocumentData {
+  id: string
+  title: string
+  excerpt: string | null
+  fileUrl: string
+  fileName: string
+  coverImage: string | null
+  viewCount: number
+}
+
 interface GraphNode {
   id: string
   slug?: string
@@ -29,6 +39,8 @@ interface GraphNode {
   size: number
   isProject?: boolean
   projectData?: ProjectData
+  isDocument?: boolean
+  documentData?: DocumentData
   // Current position (animated)
   x: number
   y: number
@@ -108,6 +120,9 @@ export function MindCloud({ className = '' }: MindCloudProps) {
   // Project state
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null)
 
+  // Document state
+  const [selectedDocument, setSelectedDocument] = useState<DocumentData | null>(null)
+
   // Mobile detection
   const [isMobile, setIsMobile] = useState(false)
 
@@ -150,12 +165,26 @@ export function MindCloud({ className = '' }: MindCloudProps) {
   const openProject = (projectData: ProjectData) => {
     setSelectedPost(null)
     setSelectedCategory(null)
+    setSelectedDocument(null)
     setCategoryPosts([])
     setSelectedProject(projectData)
     setIsPanelOpen(true)
 
     // Track view
     fetch(`/api/projects/${projectData.id}/view`, { method: 'POST' }).catch(() => {})
+  }
+
+  // Open document in side panel
+  const openDocument = (documentData: DocumentData) => {
+    setSelectedPost(null)
+    setSelectedCategory(null)
+    setSelectedProject(null)
+    setCategoryPosts([])
+    setSelectedDocument(documentData)
+    setIsPanelOpen(true)
+
+    // Track view
+    fetch(`/api/documents/${documentData.id}/view`, { method: 'POST' }).catch(() => {})
   }
 
   // Close panel
@@ -187,6 +216,7 @@ export function MindCloud({ className = '' }: MindCloudProps) {
       setSelectedPost(null)
       setSelectedCategory(null)
       setSelectedProject(null)
+      setSelectedDocument(null)
       setCategoryPosts([])
     }, 300)
   }, [])
@@ -763,6 +793,8 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           categoryName: string | null
           isProject?: boolean
           projectData?: ProjectData
+          isDocument?: boolean
+          documentData?: DocumentData
         }) => {
           const categoryName = post.categoryName || ''
           let targetCategory = 'cat-software'
@@ -802,6 +834,8 @@ export function MindCloud({ className = '' }: MindCloudProps) {
             categoryName: string | null
             isProject?: boolean
             projectData?: ProjectData
+            isDocument?: boolean
+            documentData?: DocumentData
           }, index: number) => {
             const categoryName = post.categoryName || ''
             const color = getCategoryColor(categoryName)
@@ -819,6 +853,8 @@ export function MindCloud({ className = '' }: MindCloudProps) {
               size: 8,
               isProject: post.isProject,
               projectData: post.projectData,
+              isDocument: post.isDocument,
+              documentData: post.documentData,
               x: width / 2,
               y: height / 2,
               targetX: postX,
@@ -963,6 +999,8 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           // Already focused on this cluster - open the content
           if (node.isProject && node.projectData) {
             openProject(node.projectData)
+          } else if (node.isDocument && node.documentData) {
+            openDocument(node.documentData)
           } else if (node.slug) {
             openPost(node.slug)
           }
@@ -1088,6 +1126,8 @@ export function MindCloud({ className = '' }: MindCloudProps) {
           if (focusedParent && node.parentId === focusedParent) {
             if (node.isProject && node.projectData) {
               openProject(node.projectData)
+            } else if (node.isDocument && node.documentData) {
+              openDocument(node.documentData)
             } else if (node.slug) {
               openPost(node.slug)
             }
@@ -1307,12 +1347,14 @@ export function MindCloud({ className = '' }: MindCloudProps) {
                     <p className="text-gray-500">No articles in this category yet.</p>
                   ) : (
                     <div className="space-y-4">
-                      {categoryPosts.map((post: BlogPost & { isProject?: boolean; projectData?: ProjectData }, index) => (
+                      {categoryPosts.map((post: BlogPost & { isProject?: boolean; projectData?: ProjectData; isDocument?: boolean; documentData?: DocumentData }, index) => (
                         <button
                           key={post.id || `post-${index}`}
                           onClick={() => {
                             if (post.isProject && post.projectData) {
                               openProject(post.projectData)
+                            } else if ((post as unknown as { isDocument?: boolean; documentData?: DocumentData }).isDocument && (post as unknown as { documentData?: DocumentData }).documentData) {
+                              openDocument((post as unknown as { documentData: DocumentData }).documentData)
                             } else {
                               openPost(post.slug)
                             }
@@ -1534,6 +1576,68 @@ export function MindCloud({ className = '' }: MindCloudProps) {
                         <span>Live Demo</span>
                       </a>
                     )}
+                  </div>
+                </article>
+              ) : selectedDocument ? (
+                <article className="p-6">
+                  {/* Document Cover Image */}
+                  {selectedDocument.coverImage && (
+                    <div className="relative w-full h-32 sm:h-48 md:h-64 rounded-xl overflow-hidden mb-6">
+                      <img
+                        src={selectedDocument.coverImage}
+                        alt={selectedDocument.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  {/* Document Badge */}
+                  <div className="mb-4">
+                    <span className="px-3 py-1 rounded-full text-xs font-medium text-white bg-emerald-600">
+                      Document
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <h1 className="text-3xl font-bold text-white mb-4">
+                    {selectedDocument.title}
+                  </h1>
+
+                  {/* Excerpt */}
+                  {selectedDocument.excerpt && (
+                    <p className="text-gray-300 mb-6 leading-relaxed">
+                      {selectedDocument.excerpt}
+                    </p>
+                  )}
+
+                  {/* Document Viewer */}
+                  <div className="mb-6 rounded-lg overflow-hidden border border-gray-700">
+                    <iframe
+                      src={`/document?file=${encodeURIComponent(selectedDocument.fileUrl)}&name=${encodeURIComponent(selectedDocument.fileName)}&embed=true`}
+                      className="w-full h-[500px] bg-white"
+                      title={selectedDocument.title}
+                    />
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-4 mt-8 pt-6 border-t border-gray-800">
+                    <a
+                      href={selectedDocument.fileUrl}
+                      download={selectedDocument.fileName}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                    >
+                      <ExternalLink size={18} />
+                      <span>Download Document</span>
+                    </a>
+                    <a
+                      href={`/document?file=${encodeURIComponent(selectedDocument.fileUrl)}&name=${encodeURIComponent(selectedDocument.fileName)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition-colors"
+                    >
+                      <ExternalLink size={18} />
+                      <span>Open Full View</span>
+                    </a>
                   </div>
                 </article>
               ) : (

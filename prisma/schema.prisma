@@ -114,6 +114,7 @@ model BlogCategory {
   color       String?            @db.VarChar(7)
   createdAt   DateTime           @default(now()) @map("created_at")
   posts       BlogPostCategory[]
+  documents   DocumentCategory[]
 
   @@map("blog_categories")
 }
@@ -124,6 +125,7 @@ model BlogTag {
   slug      String        @unique @db.VarChar(100)
   createdAt DateTime      @default(now()) @map("created_at")
   posts     BlogPostTag[]
+  documents DocumentTag[]
 
   @@map("blog_tags")
 }
@@ -334,4 +336,71 @@ enum CampaignStatus {
   FAILED
 
   @@map("campaign_status")
+}
+
+// Document model - for .docx files displayed like blog posts
+model Document {
+  id          String             @id @default(cuid())
+  slug        String             @unique
+  title       String             @db.VarChar(500)
+  excerpt     String?
+  fileUrl     String             @map("file_url")
+  fileName    String             @map("file_name") @db.VarChar(255)
+  coverImage  String?            @map("cover_image")
+  status      DocumentStatus     @default(DRAFT)
+  publishedAt DateTime?          @map("published_at")
+  featured    Boolean            @default(false)
+  viewCount   Int                @default(0) @map("view_count")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  categories  DocumentCategory[]
+  tags        DocumentTag[]
+  views       DocumentView[]
+
+  @@index([status])
+  @@index([publishedAt])
+  @@index([featured, publishedAt])
+  @@index([slug])
+  @@map("documents")
+}
+
+model DocumentCategory {
+  documentId String       @map("document_id")
+  categoryId String       @map("category_id")
+  document   Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  category   BlogCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, categoryId])
+  @@map("document_categories")
+}
+
+model DocumentTag {
+  documentId String   @map("document_id")
+  tagId      String   @map("tag_id")
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  tag        BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, tagId])
+  @@map("document_tags")
+}
+
+model DocumentView {
+  id        String   @id @default(cuid())
+  documentId String  @map("document_id")
+  ipHash    String   @map("ip_hash")
+  userAgent String?  @map("user_agent")
+  referrer  String?  @db.VarChar(500)
+  viewedAt  DateTime @default(now()) @map("viewed_at")
+  document  Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, viewedAt])
+  @@index([viewedAt])
+  @@map("document_views")
+}
+
+enum DocumentStatus {
+  DRAFT
+  PUBLISHED
+
+  @@map("document_status")
 }
