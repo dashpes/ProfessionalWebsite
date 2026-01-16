@@ -108,6 +108,8 @@ export default function AdminDashboard() {
   } | null>(null)
   const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false)
   const [savingDocument, setSavingDocument] = useState(false)
+  const [availableCategories, setAvailableCategories] = useState<Array<{ id: string; name: string }>>([])
+  const [availableTags, setAvailableTags] = useState<Array<{ id: string; name: string }>>([])
 
   const router = useRouter()
 
@@ -415,8 +417,31 @@ export default function AdminDashboard() {
     }
   }, [fetchDocuments])
 
+  // Fetch categories and tags for document dialog
+  const fetchCategoriesAndTags = useCallback(async () => {
+    try {
+      const [catRes, tagRes] = await Promise.all([
+        fetch('/api/blog/categories'),
+        fetch('/api/blog/tags')
+      ])
+      if (catRes.ok) {
+        const cats = await catRes.json()
+        setAvailableCategories(cats)
+      }
+      if (tagRes.ok) {
+        const tags = await tagRes.json()
+        setAvailableTags(tags)
+      }
+    } catch (err) {
+      console.error('Failed to fetch categories/tags:', err)
+    }
+  }, [])
+
   // Document CRUD functions
   const openDocumentDialog = (doc?: typeof documents[0]) => {
+    // Fetch categories and tags
+    fetchCategoriesAndTags()
+
     if (doc) {
       setEditingDocument({
         id: doc.id,
@@ -1807,6 +1832,60 @@ export default function AdminDashboard() {
                   onChange={(url) => setEditingDocument({ ...editingDocument, coverImage: url })}
                   label="Cover Image (optional)"
                 />
+
+                {/* Category Selection */}
+                <div>
+                  <Label>Category</Label>
+                  <p className="text-xs text-gray-400 mb-2">Select which category this document belongs to (determines Mind Cloud placement)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {availableCategories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          const newIds = editingDocument.categoryIds.includes(cat.id)
+                            ? editingDocument.categoryIds.filter(id => id !== cat.id)
+                            : [...editingDocument.categoryIds, cat.id]
+                          setEditingDocument({ ...editingDocument, categoryIds: newIds })
+                        }}
+                        className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                          editingDocument.categoryIds.includes(cat.id)
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tag Selection */}
+                <div>
+                  <Label>Tags</Label>
+                  <p className="text-xs text-gray-400 mb-2">Select tags to connect with related content on Mind Cloud</p>
+                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                    {availableTags.map((tag) => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => {
+                          const newIds = editingDocument.tagIds.includes(tag.id)
+                            ? editingDocument.tagIds.filter(id => id !== tag.id)
+                            : [...editingDocument.tagIds, tag.id]
+                          setEditingDocument({ ...editingDocument, tagIds: newIds })
+                        }}
+                        className={`px-2 py-1 rounded text-xs transition-colors ${
+                          editingDocument.tagIds.includes(tag.id)
+                            ? 'bg-green-600 text-white'
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
+                      >
+                        {tag.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 <div>
                   <Label htmlFor="docStatus">Status</Label>
